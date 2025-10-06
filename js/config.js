@@ -18,9 +18,9 @@ export const CONFIG = {
     ENEMY: {
         WIDTH: 40,
         HEIGHT: 40,
-        BASE_SPEED: 2,
+        BASE_SPEED: 1.2, // Reduced from 2 to 1.2 for easier gameplay
         SPAWN_INTERVAL: 2000, // milliseconds
-        MIN_SPAWN_INTERVAL: 500,
+        MIN_SPAWN_INTERVAL: 800, // Increased from 500 to give more breathing room
         POINTS: 10,
     },
     
@@ -60,8 +60,8 @@ export const CONFIG = {
     // Level progression
     LEVELS: {
         SCORE_MULTIPLIER: 1.2,
-        ENEMY_SPEED_INCREASE: 0.3,
-        SPAWN_RATE_DECREASE: 200,
+        ENEMY_SPEED_INCREASE: 0.15, // Reduced from 0.3 to 0.15 for more gradual difficulty increase
+        SPAWN_RATE_DECREASE: 150, // Reduced from 200 for more gradual spawn rate increase
     },
     
     // Particle effects

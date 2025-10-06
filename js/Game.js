@@ -131,10 +131,9 @@ export class Game {
             this.pause();
         }
 
-        // Shooting
-        if (e.key === ' ' && !this.isPaused) {
+        // Prevent spacebar scrolling
+        if (e.key === ' ') {
             e.preventDefault();
-            this.shoot();
         }
     }
 
@@ -355,22 +354,21 @@ export class Game {
             this.player.vy = this.player.speed;
         }
 
-        // Touch controls
+        // Touch controls - horizontal movement only
         if (this.touchControls.isActive) {
-            const targetX = this.touchControls.currentX - this.player.width / 2;
-            const targetY = this.touchControls.currentY - this.player.height / 2;
+            const targetX = this.touchControls.currentX;
+            const playerCenterX = this.player.x + this.player.width / 2;
             
-            const dx = targetX - this.player.x;
-            const dy = targetY - this.player.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const dx = targetX - playerCenterX;
+            const distance = Math.abs(dx);
             
-            if (distance > 5) { // Dead zone to prevent jittery movement
-                const moveSpeed = this.player.speed * 2; // Touch movement is faster
-                const moveX = (dx / distance) * moveSpeed;
-                const moveY = (dy / distance) * moveSpeed;
-                
-                this.player.vx = moveX;
-                this.player.vy = moveY;
+            if (distance > 10) { // Dead zone to prevent jittery movement
+                const moveSpeed = this.player.speed * 1.5; // Smooth touch movement
+                if (dx > 0) {
+                    this.player.vx = Math.min(moveSpeed, distance / 5); // Slow down as we approach target
+                } else {
+                    this.player.vx = Math.max(-moveSpeed, dx / 5);
+                }
             }
         }
     }
