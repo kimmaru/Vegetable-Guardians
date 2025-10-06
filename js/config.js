@@ -8,9 +8,9 @@ export const CONFIG = {
     PLAYER: {
         WIDTH: 50,
         HEIGHT: 50,
-        SPEED: 3, // Reduced from 6 to 3 (50% slower)
+        SPEED: 3.9, // Increased by 30% (3 * 1.3)
         MAX_HEALTH: 100,
-        SHOOT_COOLDOWN: 1050, // Increased to 1050ms (3x slower)
+        SHOOT_COOLDOWN: 808, // Decreased by 30% for faster firing (1050 / 1.3)
         COLOR: '#4CAF50',
     },
     
@@ -18,10 +18,10 @@ export const CONFIG = {
     ENEMY: {
         WIDTH: 60, // Increased from 40 to 60 (50% larger)
         HEIGHT: 60, // Increased from 40 to 60 (50% larger)
-        BASE_SPEED: 0.5, // Increased from 0.3 to 0.5
+        BASE_SPEED: 0.65, // Increased by 30% (0.5 * 1.3)
         BASE_HEALTH: 25, // Reduced from 50 to 25 (half)
-        SPAWN_INTERVAL: 3000, // Increased from 2000 to 3000ms
-        MIN_SPAWN_INTERVAL: 1200, // Increased from 800 to 1200ms
+        SPAWN_INTERVAL: 2308, // Decreased by 30% (3000 / 1.3)
+        MIN_SPAWN_INTERVAL: 923, // Decreased by 30% (1200 / 1.3)
         POINTS: 10,
     },
     
@@ -29,7 +29,7 @@ export const CONFIG = {
     BOSS: {
         WIDTH: 100,
         HEIGHT: 100,
-        SPEED: 0.5,
+        SPEED: 0.65, // Increased by 30% (0.5 * 1.3)
         BASE_HEALTH: 500,
         SPAWN_SCORE: 1000, // Boss appears every 1000 points
         POINTS: 100,
@@ -39,7 +39,7 @@ export const CONFIG = {
     BULLET: {
         WIDTH: 6,
         HEIGHT: 15,
-        SPEED: 5, // Reduced from 10 to 5 (50% slower)
+        SPEED: 3.5, // Reduced by 30% from 5 (5 * 0.7)
         COLOR: '#FFD700',
         DAMAGE: 25,
     },
@@ -48,7 +48,7 @@ export const CONFIG = {
     ENEMY_BULLET: {
         WIDTH: 5,
         HEIGHT: 12,
-        SPEED: 2.5, // Reduced from 5 to 2.5 (50% slower)
+        SPEED: 3.25, // Increased by 30% (2.5 * 1.3)
         COLOR: '#FF4444',
         DAMAGE: 10,
     },
@@ -57,7 +57,7 @@ export const CONFIG = {
     POWERUP: {
         WIDTH: 30,
         HEIGHT: 30,
-        SPEED: 1.5, // Reduced from 3 to 1.5 (50% slower)
+        SPEED: 1.95, // Increased by 30% (1.5 * 1.3)
         SPAWN_CHANCE: 0.15, // 15% chance on enemy kill
         DURATION: 10000, // 10 seconds
         TYPES: {
