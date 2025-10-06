@@ -228,6 +228,27 @@ export class Game {
             });
         }
 
+        // Laser Beam
+        if (this.player.powerUps.laserBeam) {
+            const laser = new Bullet(bulletX, bulletY, true);
+            laser.isLaser = true;
+            laser.width = 8;
+            laser.height = CONFIG.CANVAS_HEIGHT;
+            laser.vy = 0; // Laser doesn't move
+            laser.lifespan = 100; // Very short lifespan
+            this.bullets.push(laser);
+            return;
+        }
+        
+        // Homing Missile
+        if (this.player.powerUps.homingMissile) {
+            const missile = new Bullet(bulletX, bulletY, true);
+            missile.isHoming = true;
+            missile.homingStrength = 0.15;
+            this.bullets.push(missile);
+            return;
+        }
+
         // Spiral Shot
         if (this.player.powerUps.spiralShot) {
             for (let i = 0; i < 8; i++) {
@@ -809,7 +830,7 @@ export class Game {
         // Update and draw bullets
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
-            bullet.update(deltaTime);
+            bullet.update(deltaTime, this.enemies);
             bullet.draw(this.ctx);
 
             if (!bullet.active) {

@@ -27,11 +27,19 @@ export class Enemy extends GameObject {
         this.emoji = randomChoice(enemyPool);
         this.points = CONFIG.ENEMY.POINTS;
         
-        // Movement pattern
-        this.movementType = randomInt(0, 2);
+        // Movement pattern - more variety
+        this.movementType = randomInt(0, 6);
         this.time = 0;
-        this.amplitude = randomInt(30, 60);
-        this.frequency = randomInt(1, 3) / 1000;
+        this.amplitude = randomInt(30, 80);
+        this.frequency = randomInt(1, 4) / 1000;
+        this.vx = 0;
+        
+        // Special movement properties
+        this.circleRadius = randomInt(40, 80);
+        this.circleSpeed = randomInt(1, 3) / 2000;
+        this.initialX = x;
+        this.dashSpeed = 0;
+        this.isDashing = false;
         
         // Shooting
         this.canShoot = Math.random() < 0.3; // 30% of enemies can shoot
@@ -47,13 +55,50 @@ export class Enemy extends GameObject {
             case 0: // Straight down
                 this.y += this.vy;
                 break;
+                
             case 1: // Sine wave
                 this.y += this.vy;
                 this.x += Math.sin(this.time * this.frequency) * this.amplitude * 0.02;
                 break;
+                
             case 2: // Zigzag
                 this.y += this.vy;
                 this.x += Math.cos(this.time * this.frequency * 2) * this.amplitude * 0.03;
+                break;
+                
+            case 3: // Circular motion
+                this.y += this.vy * 0.7;
+                this.x = this.initialX + Math.sin(this.time * this.circleSpeed) * this.circleRadius;
+                break;
+                
+            case 4: // Diagonal swooping
+                this.y += this.vy;
+                const swoop = Math.sin(this.time * this.frequency * 3) * this.amplitude;
+                this.x += swoop * 0.04;
+                break;
+                
+            case 5: // Stop and dash
+                if (!this.isDashing && this.time % 2000 < 100) {
+                    this.isDashing = true;
+                    this.dashSpeed = this.vy * 3;
+                }
+                
+                if (this.isDashing) {
+                    this.y += this.dashSpeed;
+                    this.dashSpeed *= 0.95;
+                    if (this.dashSpeed < this.vy) {
+                        this.isDashing = false;
+                    }
+                } else {
+                    this.y += this.vy * 0.5;
+                }
+                break;
+                
+            case 6: // Wave pattern with horizontal drift
+                this.y += this.vy;
+                this.vx += Math.sin(this.time * this.frequency * 4) * 0.05;
+                this.vx *= 0.98; // Damping
+                this.x += this.vx;
                 break;
         }
 
