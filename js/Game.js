@@ -1133,6 +1133,8 @@ export class Game {
                 description: '주기적으로 전방위 탄환 발사',
                 effect: () => {
                     this.player.powerUps.nova = true;
+                    // Trigger nova immediately
+                    this.triggerNova();
                 }
             },
             {
@@ -1264,17 +1266,6 @@ export class Game {
                 }
             },
             {
-                id: 'nova',
-                tier: 'B',
-                name: '💫 노바', 
-                description: '360도 전방향 공격',
-                effect: () => {
-                    this.player.powerUps.nova = true;
-                    // Trigger nova immediately
-                    this.triggerNova();
-                }
-            },
-            {
                 id: 'doubleShot',
                 tier: 'B',
                 name: '🎯 더블샷',
@@ -1352,9 +1343,16 @@ export class Game {
             'D': 5       // Decreased from 32.5% to 5%
         };
         
-        // Select 3 abilities based on weighted random
+        // Select 3 unique abilities based on weighted random
         const selectedAbilities = [];
-        for (let i = 0; i < 3; i++) {
+        const usedIds = new Set();
+        
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        while (selectedAbilities.length < 3 && attempts < maxAttempts) {
+            attempts++;
+            
             const roll = Math.random() * 100;
             let cumulative = 0;
             let selectedTier = 'D';
@@ -1367,11 +1365,26 @@ export class Game {
                 }
             }
             
-            // Filter abilities by selected tier
-            const tierAbilities = abilities.filter(a => a.tier === selectedTier);
+            // Filter abilities by selected tier and exclude already selected
+            const tierAbilities = abilities.filter(a => 
+                a.tier === selectedTier && !usedIds.has(a.id)
+            );
+            
             if (tierAbilities.length > 0) {
                 const randomAbility = tierAbilities[Math.floor(Math.random() * tierAbilities.length)];
                 selectedAbilities.push(randomAbility);
+                usedIds.add(randomAbility.id);
+            }
+        }
+        
+        // Fallback: if we couldn't get 3 unique abilities, fill with any remaining
+        if (selectedAbilities.length < 3) {
+            const remainingAbilities = abilities.filter(a => !usedIds.has(a.id));
+            while (selectedAbilities.length < 3 && remainingAbilities.length > 0) {
+                const randomIndex = Math.floor(Math.random() * remainingAbilities.length);
+                const ability = remainingAbilities.splice(randomIndex, 1)[0];
+                selectedAbilities.push(ability);
+                usedIds.add(ability.id);
             }
         }
         
@@ -1398,10 +1411,18 @@ export class Game {
                 <div class="ability-description">${ability.description}</div>
             `;
             button.addEventListener('click', () => {
-                ability.effect();
-                this.hideAbilitySelection();
-                this.isPaused = false;
-                this.updateUI();
+                try {
+                    ability.effect();
+                    this.hideAbilitySelection();
+                    this.isPaused = false;
+                    this.updateUI();
+                } catch (error) {
+                    console.error('Ability effect error:', error);
+                    // Still hide the overlay and resume game
+                    this.hideAbilitySelection();
+                    this.isPaused = false;
+                    this.updateUI();
+                }
             });
             abilityChoices.appendChild(button);
         });
