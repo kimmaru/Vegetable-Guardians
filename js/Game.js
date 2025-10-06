@@ -286,7 +286,26 @@ export class Game {
             if (!this.player.powerUps.laserBeam && 
                 !this.player.powerUps.homingMissile && 
                 !this.player.powerUps.spiralShot) {
-                this.bullets.push(new Bullet(bx, bulletY, true));
+                const bullet = new Bullet(bx, bulletY, true);
+                
+                // Apply visual effects based on player abilities
+                if (this.player.powerUps.piercing) bullet.isPiercing = true;
+                if (this.player.powerUps.explosive) bullet.isExplosive = true;
+                if (this.player.powerUps.criticalHit) bullet.isCritical = true;
+                if (this.player.powerUps.freezing) bullet.isFreezing = true;
+                
+                this.bullets.push(bullet);
+            }
+        }
+        
+        // Multi-shot: fire additional volleys
+        if (this.player.multiShotCount && this.player.multiShotCount > 1) {
+            for (let volley = 1; volley < this.player.multiShotCount; volley++) {
+                setTimeout(() => {
+                    if (this.player && this.player.active) {
+                        this.shoot();
+                    }
+                }, volley * 150); // 150ms delay between volleys
             }
         }
         
@@ -979,6 +998,11 @@ export class Game {
                         this.updateUI();
                     }
                     
+                    // Explosive effect on hit (not on destroy)
+                    if (bullet.isExplosive || (this.player && this.player.powerUps.explosive)) {
+                        this.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                    }
+                    
                     // Piercing bullets don't get destroyed
                     if (!this.player || !this.player.powerUps.piercing) {
                     bullet.destroy();
@@ -1005,11 +1029,6 @@ export class Game {
                             `+${enemy.points}`,
                             '#FFD700'
                         ));
-                        
-                        // Explosive effect
-                        if (this.player && this.player.powerUps.explosive) {
-                            this.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
-                        }
                         
                         // PowerUp system removed
                     }
@@ -1307,7 +1326,7 @@ export class Game {
                 id: 'explosive', 
                 tier: 'A',
                 name: '💣 폭발 탄환', 
-                description: '적 처치시 광역 데미지',
+                description: '탄환 명중시 광역 폭발',
                 effect: () => {
                     this.player.powerUps.explosive = true;
                 }

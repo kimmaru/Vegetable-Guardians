@@ -23,6 +23,12 @@ export class Bullet extends GameObject {
         this.homingStrength = 0;
         this.lifespan = null;
         this.age = 0;
+        
+        // Visual effects based on abilities
+        this.isPiercing = false;
+        this.isExplosive = false;
+        this.isCritical = false;
+        this.isFreezing = false;
     }
 
     update(deltaTime, enemies = []) {
@@ -136,12 +142,35 @@ export class Bullet extends GameObject {
             return;
         }
         
+        // Determine bullet color based on abilities
+        let bulletColor = this.color;
+        let glowColor = this.color;
+        let glowIntensity = 10;
+        
+        if (this.isExplosive) {
+            bulletColor = '#FF6B00';
+            glowColor = '#FF6B00';
+            glowIntensity = 20;
+        } else if (this.isPiercing) {
+            bulletColor = '#00FFFF';
+            glowColor = '#00FFFF';
+            glowIntensity = 15;
+        } else if (this.isFreezing) {
+            bulletColor = '#88CCFF';
+            glowColor = '#88CCFF';
+            glowIntensity = 15;
+        } else if (this.isCritical) {
+            bulletColor = '#FFD700';
+            glowColor = '#FFD700';
+            glowIntensity = 18;
+        }
+        
         // Normal bullet trail
         ctx.globalAlpha = 0.3;
         for (let i = 0; i < this.trail.length; i++) {
             const alpha = (i + 1) / this.trail.length * 0.5;
             ctx.globalAlpha = alpha;
-            ctx.fillStyle = this.color;
+            ctx.fillStyle = bulletColor;
             ctx.fillRect(
                 this.trail[i].x + this.width / 4,
                 this.trail[i].y,
@@ -152,9 +181,9 @@ export class Bullet extends GameObject {
         ctx.globalAlpha = 1;
 
         // Draw bullet
-        ctx.fillStyle = this.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
+        ctx.fillStyle = bulletColor;
+        ctx.shadowBlur = glowIntensity;
+        ctx.shadowColor = glowColor;
         
         // Draw bullet shape
         ctx.beginPath();
@@ -163,6 +192,25 @@ export class Bullet extends GameObject {
         ctx.lineTo(this.x, this.y + this.height);
         ctx.closePath();
         ctx.fill();
+        
+        // Extra effect for explosive bullets
+        if (this.isExplosive) {
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        // Extra effect for piercing bullets
+        if (this.isPiercing) {
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(this.x + this.width / 3, this.y, this.width / 3, this.height);
+            ctx.restore();
+        }
         
         ctx.shadowBlur = 0;
     }
