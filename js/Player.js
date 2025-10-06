@@ -46,6 +46,15 @@ export class Player extends GameObject {
         if (this.powerUps.shield) {
             this.shieldAlpha = 0.5 + Math.sin(currentTime / 100) * 0.3;
         }
+        
+        // Health regeneration
+        if (this.powerUps.regen) {
+            if (!this.lastRegenTime) this.lastRegenTime = currentTime;
+            if (currentTime - this.lastRegenTime >= 1000) {
+                this.heal(1);
+                this.lastRegenTime = currentTime;
+            }
+        }
     }
 
     draw(ctx) {

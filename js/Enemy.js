@@ -3,10 +3,11 @@ import { CONFIG, EMOJIS } from './config.js';
 import { randomChoice, randomInt } from './utils.js';
 
 export class Enemy extends GameObject {
-    constructor(x, y, speed) {
+    constructor(x, y, speed, gameLevel = 1) {
         super(x, y, CONFIG.ENEMY.WIDTH, CONFIG.ENEMY.HEIGHT);
-        this.health = 25;
-        this.maxHealth = 25;
+        // Health increases with game level
+        this.maxHealth = CONFIG.ENEMY.BASE_HEALTH + (gameLevel - 1) * 10;
+        this.health = this.maxHealth;
         this.speed = speed;
         this.vy = this.speed;
         this.emoji = randomChoice(EMOJIS.ENEMIES);

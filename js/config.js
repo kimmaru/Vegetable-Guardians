@@ -8,9 +8,9 @@ export const CONFIG = {
     PLAYER: {
         WIDTH: 50,
         HEIGHT: 50,
-        SPEED: 6,
+        SPEED: 3, // Reduced from 6 to 3 (50% slower)
         MAX_HEALTH: 100,
-        SHOOT_COOLDOWN: 250, // milliseconds
+        SHOOT_COOLDOWN: 350, // Increased from 250 to 350ms
         COLOR: '#4CAF50',
     },
     
@@ -18,9 +18,10 @@ export const CONFIG = {
     ENEMY: {
         WIDTH: 40,
         HEIGHT: 40,
-        BASE_SPEED: 1.2, // Reduced from 2 to 1.2 for easier gameplay
-        SPAWN_INTERVAL: 2000, // milliseconds
-        MIN_SPAWN_INTERVAL: 800, // Increased from 500 to give more breathing room
+        BASE_SPEED: 0.6, // Reduced from 1.2 to 0.6 (50% slower)
+        BASE_HEALTH: 25, // Starting health
+        SPAWN_INTERVAL: 3000, // Increased from 2000 to 3000ms
+        MIN_SPAWN_INTERVAL: 1200, // Increased from 800 to 1200ms
         POINTS: 10,
     },
     
@@ -28,7 +29,7 @@ export const CONFIG = {
     BULLET: {
         WIDTH: 6,
         HEIGHT: 15,
-        SPEED: 10,
+        SPEED: 5, // Reduced from 10 to 5 (50% slower)
         COLOR: '#FFD700',
         DAMAGE: 25,
     },
@@ -37,7 +38,7 @@ export const CONFIG = {
     ENEMY_BULLET: {
         WIDTH: 5,
         HEIGHT: 12,
-        SPEED: 5,
+        SPEED: 2.5, // Reduced from 5 to 2.5 (50% slower)
         COLOR: '#FF4444',
         DAMAGE: 10,
     },
@@ -46,7 +47,7 @@ export const CONFIG = {
     POWERUP: {
         WIDTH: 30,
         HEIGHT: 30,
-        SPEED: 3,
+        SPEED: 1.5, // Reduced from 3 to 1.5 (50% slower)
         SPAWN_CHANCE: 0.15, // 15% chance on enemy kill
         DURATION: 10000, // 10 seconds
         TYPES: {

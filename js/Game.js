@@ -155,8 +155,11 @@ export class Game {
         
         const touch = e.touches[0];
         const rect = this.canvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
+        // Scale touch position to match canvas internal coordinates
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
         
         // Check for double tap (pause/resume)
         const currentTime = Date.now();
@@ -184,8 +187,11 @@ export class Game {
         if (!touch) return;
         
         const rect = this.canvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
+        // Scale touch position to match canvas internal coordinates
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
         
         this.touchControls.currentX = x;
         this.touchControls.currentY = y;
@@ -205,7 +211,12 @@ export class Game {
         const bulletX = this.player.x + this.player.width / 2 - CONFIG.BULLET.WIDTH / 2;
         const bulletY = this.player.y;
 
-        if (this.player.powerUps.doubleShot) {
+        if (this.player.powerUps.tripleShot) {
+            // Shoot three bullets
+            this.bullets.push(new Bullet(bulletX - 15, bulletY, true));
+            this.bullets.push(new Bullet(bulletX, bulletY, true));
+            this.bullets.push(new Bullet(bulletX + 15, bulletY, true));
+        } else if (this.player.powerUps.doubleShot) {
             // Shoot two bullets
             this.bullets.push(new Bullet(bulletX - 10, bulletY, true));
             this.bullets.push(new Bullet(bulletX + 10, bulletY, true));
@@ -220,7 +231,15 @@ export class Game {
         const y = -CONFIG.ENEMY.HEIGHT;
         const speed = CONFIG.ENEMY.BASE_SPEED + (this.level - 1) * CONFIG.LEVELS.ENEMY_SPEED_INCREASE;
         
-        this.enemies.push(new Enemy(x, y, speed));
+        this.enemies.push(new Enemy(x, y, speed, this.level));
+        
+        // Spawn additional enemies based on level (max 3 at once)
+        const additionalEnemies = Math.min(Math.floor(this.level / 3), 2);
+        for (let i = 0; i < additionalEnemies; i++) {
+            const offsetX = randomInt(0, CONFIG.CANVAS_WIDTH - CONFIG.ENEMY.WIDTH);
+            const offsetY = -CONFIG.ENEMY.HEIGHT - (i + 1) * 60;
+            this.enemies.push(new Enemy(offsetX, offsetY, speed, this.level));
+        }
     }
 
     spawnPowerUp(x, y) {
@@ -230,6 +249,30 @@ export class Game {
         const type = randomChoice(types);
         
         this.powerUps.push(new PowerUp(x, y, type));
+    }
+
+    createExplosion(x, y) {
+        // Damage nearby enemies
+        const explosionRadius = 80;
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const dx = (enemy.x + enemy.width / 2) - x;
+            const dy = (enemy.y + enemy.height / 2) - y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < explosionRadius) {
+                enemy.takeDamage(30);
+                this.effects.push(new TextEffect(
+                    enemy.x + enemy.width / 2,
+                    enemy.y - 10,
+                    '30',
+                    '#FF4444'
+                ));
+            }
+        }
+        
+        // Visual effect
+        this.effects.push(new ExplosionEffect(x, y, '#FF6B00'));
     }
 
     update(currentTime) {
@@ -385,9 +428,35 @@ export class Game {
                 const enemy = this.enemies[j];
                 
                 if (checkCollision(bullet, enemy)) {
+                    // Calculate damage (with critical hit)
+                    let damage = bullet.damage;
+                    let isCrit = false;
+                    if (this.player && this.player.powerUps.criticalHit && Math.random() < 0.2) {
+                        damage *= 2;
+                        isCrit = true;
+                    }
+                    
                     // Damage enemy
-                    const destroyed = enemy.takeDamage(bullet.damage);
-                    bullet.destroy();
+                    const destroyed = enemy.takeDamage(damage);
+                    
+                    // Show damage number
+                    this.effects.push(new TextEffect(
+                        enemy.x + enemy.width / 2,
+                        enemy.y - 10,
+                        isCrit ? `${damage}!` : `${damage}`,
+                        isCrit ? '#FF6B00' : '#FFFFFF'
+                    ));
+                    
+                    // Vampire effect
+                    if (this.player && this.player.powerUps.vampire) {
+                        this.player.heal(Math.floor(damage * 0.1));
+                        this.updateUI();
+                    }
+                    
+                    // Piercing bullets don't get destroyed
+                    if (!this.player || !this.player.powerUps.piercing) {
+                        bullet.destroy();
+                    }
 
                     if (destroyed) {
                         // Add score
@@ -411,11 +480,18 @@ export class Game {
                             '#FFD700'
                         ));
                         
+                        // Explosive effect
+                        if (this.player && this.player.powerUps.explosive) {
+                            this.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                        }
+                        
                         // Spawn power-up
                         this.spawnPowerUp(enemy.x, enemy.y);
                     }
                     
-                    break;
+                    if (!this.player || !this.player.powerUps.piercing) {
+                        break;
+                    }
                 }
             }
         }
@@ -572,9 +648,9 @@ export class Game {
             { 
                 id: 'damage', 
                 name: '⚔️ 공격력 증가', 
-                description: '총알 공격력 +10',
+                description: '총알 공격력 +15',
                 effect: () => {
-                    CONFIG.BULLET.DAMAGE += 10;
+                    CONFIG.BULLET.DAMAGE += 15;
                 }
             },
             { 
@@ -591,6 +667,96 @@ export class Game {
                 description: '발사 쿨다운 -50ms',
                 effect: () => {
                     this.player.shootCooldown = Math.max(100, this.player.shootCooldown - 50);
+                }
+            },
+            { 
+                id: 'tripleShot', 
+                name: '🎯 트리플샷', 
+                description: '3발 동시 발사',
+                effect: () => {
+                    this.player.powerUps.tripleShot = true;
+                }
+            },
+            { 
+                id: 'piercing', 
+                name: '🔥 관통 탄환', 
+                description: '총알이 적을 관통함',
+                effect: () => {
+                    this.player.powerUps.piercing = true;
+                }
+            },
+            { 
+                id: 'bulletSize', 
+                name: '💥 대형 탄환', 
+                description: '총알 크기 +50%',
+                effect: () => {
+                    CONFIG.BULLET.WIDTH *= 1.5;
+                    CONFIG.BULLET.HEIGHT *= 1.5;
+                }
+            },
+            { 
+                id: 'regen', 
+                name: '❤️‍🩹 체력 재생', 
+                description: '초당 체력 +1',
+                effect: () => {
+                    this.player.powerUps.regen = true;
+                }
+            },
+            { 
+                id: 'magnetism', 
+                name: '🧲 자석', 
+                description: '파워업 자동 흡수',
+                effect: () => {
+                    this.player.powerUps.magnetism = true;
+                }
+            },
+            { 
+                id: 'explosive', 
+                name: '💣 폭발 탄환', 
+                description: '적 처치시 폭발 데미지',
+                effect: () => {
+                    this.player.powerUps.explosive = true;
+                }
+            },
+            { 
+                id: 'laser', 
+                name: '🔆 레이저 빔', 
+                description: '직선 레이저 발사',
+                effect: () => {
+                    this.player.powerUps.laser = true;
+                }
+            },
+            { 
+                id: 'wave', 
+                name: '🌊 충격파', 
+                description: '주기적 광역 공격',
+                effect: () => {
+                    this.player.powerUps.wave = true;
+                    this.player.lastWaveTime = Date.now();
+                }
+            },
+            { 
+                id: 'vampire', 
+                name: '🧛 흡혈', 
+                description: '데미지의 10% 체력 회복',
+                effect: () => {
+                    this.player.powerUps.vampire = true;
+                }
+            },
+            { 
+                id: 'criticalHit', 
+                name: '✨ 치명타', 
+                description: '20% 확률로 2배 데미지',
+                effect: () => {
+                    this.player.powerUps.criticalHit = true;
+                }
+            },
+            { 
+                id: 'freezing', 
+                name: '❄️ 냉동 탄환', 
+                description: '적을 50% 둔화',
+                effect: () => {
+                    this.player.powerUps.freezing = true;
                 }
             }
         ];
