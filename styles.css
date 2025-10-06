@@ -229,6 +229,9 @@ body {
     flex-direction: column;
     gap: 15px;
     margin-top: 20px;
+    width: 100%;
+    max-width: 600px;
+    align-items: stretch;
 }
 
 .ability-button {
@@ -241,6 +244,8 @@ body {
     transition: all 0.3s ease;
     text-align: left;
     position: relative;
+    width: 100%;
+    min-height: 100px;
 }
 
 .ability-button:hover {

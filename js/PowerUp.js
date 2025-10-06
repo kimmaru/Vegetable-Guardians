@@ -44,17 +44,15 @@ export class PowerUp extends GameObject {
         ctx.fill();
         ctx.globalAlpha = 1;
 
-        // Draw emoji
+        // Draw emoji (reduced size to prevent stretching)
         ctx.shadowBlur = 0;
-        ctx.font = `${this.height * 0.8}px Arial`;
+        ctx.font = `${this.height * 0.6}px Arial`;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        // Adjust position to center the emoji properly
-        const emojiY = this.y + this.height * 0.75;
+        ctx.textBaseline = 'middle';
         ctx.fillText(
             this.config.emoji,
             this.x + this.width / 2,
-            emojiY
+            this.y + this.height / 2
         );
         
         ctx.restore();

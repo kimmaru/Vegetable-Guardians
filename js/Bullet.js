@@ -11,6 +11,7 @@ export class Bullet extends GameObject {
         this.speed = config.SPEED;
         this.color = config.COLOR;
         this.vy = isPlayer ? -this.speed : this.speed;
+        this.vx = 0; // Horizontal velocity for angled shots
         
         // Trail effect
         this.trail = [];
@@ -25,9 +26,11 @@ export class Bullet extends GameObject {
         }
 
         this.y += this.vy;
+        this.x += this.vx;
 
-        // Remove if off screen
-        if (this.y < -this.height || this.y > CONFIG.CANVAS_HEIGHT) {
+        // Remove if off screen (with margin for angled bullets)
+        if (this.y < -this.height - 50 || this.y > CONFIG.CANVAS_HEIGHT + 50 ||
+            this.x < -this.width - 50 || this.x > CONFIG.CANVAS_WIDTH + 50) {
             this.destroy();
         }
     }

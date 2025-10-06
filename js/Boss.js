@@ -111,13 +111,11 @@ export class Boss extends GameObject {
         ctx.shadowColor = this.phase === 2 ? '#FF0000' : this.phase === 1 ? '#FF6B00' : '#FFD700';
         ctx.shadowBlur = 20 + Math.sin(this.time / 100) * 10;
         
-        // Draw boss emoji (larger)
-        ctx.font = `${this.height}px Arial`;
+        // Draw boss emoji (reduced size to prevent stretching)
+        ctx.font = `${this.height * 0.7}px Arial`;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        // Adjust position to center the emoji properly
-        const emojiY = this.y + this.height * 0.85;
-        ctx.fillText(this.emoji, this.x + this.width / 2, emojiY);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.emoji, this.x + this.width / 2, this.y + this.height / 2);
         
         ctx.restore();
     }
@@ -140,6 +138,92 @@ export class Boss extends GameObject {
             return true;
         }
         return false;
+    }
+
+    getAttackPattern() {
+        // Different attack patterns based on phase
+        const patterns = [];
+        
+        if (this.phase === 2) {
+            // Enraged: Most aggressive patterns
+            patterns.push('spray', 'circular', 'spiral', 'laser', 'burst');
+        } else if (this.phase === 1) {
+            // Angry: Mixed patterns
+            patterns.push('burst', 'wave', 'spiral', 'circular');
+        } else {
+            // Normal: Basic patterns
+            patterns.push('triple', 'burst', 'wave');
+        }
+        
+        // Randomly select from available patterns
+        return randomChoice(patterns);
+    }
+    
+    getAttackBullets() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height;
+        const pattern = this.getAttackPattern();
+        const bullets = [];
+        
+        switch (pattern) {
+            case 'triple':
+                // Basic triple shot
+                bullets.push({ x: centerX - 20, y: centerY, angle: Math.PI / 2 });
+                bullets.push({ x: centerX, y: centerY, angle: Math.PI / 2 });
+                bullets.push({ x: centerX + 20, y: centerY, angle: Math.PI / 2 });
+                break;
+                
+            case 'burst':
+                // 5-way burst
+                for (let i = 0; i < 5; i++) {
+                    const angle = Math.PI / 2 + (i - 2) * 0.3;
+                    bullets.push({ x: centerX, y: centerY, angle });
+                }
+                break;
+                
+            case 'spray':
+                // Wide spray - 7 bullets
+                for (let i = 0; i < 7; i++) {
+                    const angle = Math.PI / 2 + (i - 3) * 0.25;
+                    bullets.push({ x: centerX, y: centerY, angle });
+                }
+                break;
+                
+            case 'circular':
+                // Full circle - 8 directions
+                for (let i = 0; i < 8; i++) {
+                    const angle = (Math.PI * 2 / 8) * i;
+                    bullets.push({ x: centerX, y: centerY, angle });
+                }
+                break;
+                
+            case 'spiral':
+                // Spiral pattern - 6 bullets with rotation
+                const spiralOffset = (Date.now() / 100) % (Math.PI * 2);
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI * 2 / 6) * i + spiralOffset;
+                    bullets.push({ x: centerX, y: centerY, angle });
+                }
+                break;
+                
+            case 'wave':
+                // Wave pattern - aimed downward
+                const waveCount = 3;
+                for (let i = 0; i < waveCount; i++) {
+                    const offsetAngle = (i - 1) * 0.2;
+                    bullets.push({ x: centerX + (i - 1) * 30, y: centerY, angle: Math.PI / 2 + offsetAngle });
+                }
+                break;
+                
+            case 'laser':
+                // Concentrated laser-like stream - 3 bullets in line
+                for (let i = 0; i < 3; i++) {
+                    bullets.push({ x: centerX, y: centerY, angle: Math.PI / 2, speed: 3 + i * 0.5 });
+                }
+                break;
+        }
+        
+        return bullets;
     }
 }
 

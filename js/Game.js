@@ -323,7 +323,11 @@ export class Game {
         this.grantBossReward();
         
         shakeScreen(20, 1000);
+        
+        // Reset boss state and return to normal waves
         this.bossActive = false;
+        this.boss = null;
+        this.lastBossScore = this.score; // Track when boss was defeated
     }
 
     grantBossReward() {
@@ -465,15 +469,20 @@ export class Game {
             this.boss.update(deltaTime);
             this.boss.draw(this.ctx);
             
-            // Boss shooting
+            // Boss shooting with varied patterns
             if (this.boss.shouldShoot()) {
-                const bulletX = this.boss.x + this.boss.width / 2 - CONFIG.ENEMY_BULLET.WIDTH / 2;
-                const bulletY = this.boss.y + this.boss.height;
+                const bulletData = this.boss.getAttackBullets();
                 
-                // Boss shoots 3 bullets
-                this.bullets.push(new Bullet(bulletX - 20, bulletY, false));
-                this.bullets.push(new Bullet(bulletX, bulletY, false));
-                this.bullets.push(new Bullet(bulletX + 20, bulletY, false));
+                bulletData.forEach(data => {
+                    const bullet = new Bullet(data.x - CONFIG.ENEMY_BULLET.WIDTH / 2, data.y, false);
+                    
+                    // Apply angle-based velocity
+                    const speed = data.speed || CONFIG.ENEMY_BULLET.SPEED;
+                    bullet.vx = Math.cos(data.angle) * speed;
+                    bullet.vy = Math.sin(data.angle) * speed;
+                    
+                    this.bullets.push(bullet);
+                });
             }
             
             // Remove if destroyed
@@ -895,6 +904,24 @@ export class Game {
                     this.player.powerUps.megaExplosion = true;
                 }
             },
+            {
+                id: 'blackHole',
+                tier: 'SS',
+                name: '🌀 블랙홀',
+                description: '적을 빨아들이는 블랙홀 생성',
+                effect: () => {
+                    this.player.powerUps.blackHole = true;
+                }
+            },
+            {
+                id: 'phoenixReborn',
+                tier: 'SS',
+                name: '🔥 불사조',
+                description: '사망 시 1회 부활 (재사용 90초)',
+                effect: () => {
+                    this.player.powerUps.phoenixReborn = true;
+                }
+            },
             // S Tier (5% chance)
             { 
                 id: 'quadShot', 
@@ -930,6 +957,33 @@ export class Game {
                 description: '적에서 적으로 튕기는 번개',
                 effect: () => {
                     this.player.powerUps.chainLightning = true;
+                }
+            },
+            {
+                id: 'nova',
+                tier: 'S',
+                name: '🌟 노바',
+                description: '주기적으로 전방위 탄환 발사',
+                effect: () => {
+                    this.player.powerUps.nova = true;
+                }
+            },
+            {
+                id: 'reflectShield',
+                tier: 'S',
+                name: '🛡️ 반사 실드',
+                description: '적 탄환 30% 확률로 반사',
+                effect: () => {
+                    this.player.powerUps.reflectShield = true;
+                }
+            },
+            {
+                id: 'spiralShot',
+                tier: 'S',
+                name: '🌀 나선 탄환',
+                description: '회전하며 발사되는 탄환',
+                effect: () => {
+                    this.player.powerUps.spiralShot = true;
                 }
             },
             // A Tier (10% chance)
@@ -979,6 +1033,33 @@ export class Game {
                     this.player.droneCount = (this.player.droneCount || 0) + 1;
                 }
             },
+            {
+                id: 'shockwave',
+                tier: 'A',
+                name: '💨 충격파',
+                description: '주변 적을 밀어내는 충격파',
+                effect: () => {
+                    this.player.powerUps.shockwave = true;
+                }
+            },
+            {
+                id: 'toxicCloud',
+                tier: 'A',
+                name: '☠️ 독구름',
+                description: '지속 데미지를 주는 독구름',
+                effect: () => {
+                    this.player.powerUps.toxicCloud = true;
+                }
+            },
+            {
+                id: 'shield',
+                tier: 'A',
+                name: '🛡️ 보호막',
+                description: '데미지 50% 감소',
+                effect: () => {
+                    this.player.powerUps.shield = true;
+                }
+            },
             // B Tier (20% chance)
             { 
                 id: 'damageUp2', 
@@ -1026,6 +1107,33 @@ export class Game {
                 description: '돌아오는 부메랑 발사',
                 effect: () => {
                     this.player.powerUps.boomerang = true;
+                }
+            },
+            {
+                id: 'vampire',
+                tier: 'B',
+                name: '🩸 흡혈',
+                description: '데미지의 20%만큼 체력 회복',
+                effect: () => {
+                    this.player.powerUps.vampire = true;
+                }
+            },
+            {
+                id: 'thorns',
+                tier: 'B',
+                name: '🌵 가시',
+                description: '피격 시 적에게 50% 반사',
+                effect: () => {
+                    this.player.powerUps.thorns = true;
+                }
+            },
+            {
+                id: 'doubleShot',
+                tier: 'B',
+                name: '🎯 더블샷',
+                description: '2발 동시 발사',
+                effect: () => {
+                    this.player.powerUps.doubleShot = true;
                 }
             },
             // C Tier (30% chance)

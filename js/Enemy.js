@@ -64,13 +64,11 @@ export class Enemy extends GameObject {
             ctx.fillRect(this.x, this.y - 8, barWidth * healthPercent, barHeight);
         }
 
-        // Draw enemy emoji
-        ctx.font = `${this.height}px Arial`;
+        // Draw enemy emoji (reduced size to prevent stretching)
+        ctx.font = `${this.height * 0.7}px Arial`;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        // Adjust position to center the emoji properly
-        const emojiY = this.y + this.height * 0.85;
-        ctx.fillText(this.emoji, this.x + this.width / 2, emojiY);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.emoji, this.x + this.width / 2, this.y + this.height / 2);
     }
 
     takeDamage(amount) {
