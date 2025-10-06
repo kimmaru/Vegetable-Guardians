@@ -32,11 +32,17 @@ export class Game {
         this.effects = [];
         
         // Boss tracking
-        this.lastBossScore = 0;
+        this.lastBossWave = 0;
         this.bossActive = false;
 
         // Spawning
         this.lastEnemySpawn = 0;
+        
+        // Wave system
+        this.waveEnemiesTotal = 0;
+        this.waveEnemiesSpawned = 0;
+        this.waveEnemiesRemaining = 0;
+        this.waveInProgress = false;
         this.enemySpawnInterval = CONFIG.ENEMY.SPAWN_INTERVAL;
 
         // Auto shooting
@@ -51,8 +57,7 @@ export class Game {
             startX: 0,
             startY: 0,
             currentX: 0,
-            currentY: 0,
-            lastTapTime: 0
+            currentY: 0
         };
         
         // Background
@@ -94,8 +99,11 @@ export class Game {
         this.effects = [];
         this.lastEnemySpawn = 0;
         this.enemySpawnInterval = CONFIG.ENEMY.SPAWN_INTERVAL;
-        this.lastBossScore = 0;
+        this.lastBossWave = 0;
         this.bossActive = false;
+        
+        // Initialize first wave
+        this.startWave(1);
 
         // Create player
         const startX = CONFIG.CANVAS_WIDTH / 2 - CONFIG.PLAYER.WIDTH / 2;
@@ -166,14 +174,6 @@ export class Game {
         const scaleY = this.canvas.height / rect.height;
         const x = (touch.clientX - rect.left) * scaleX;
         const y = (touch.clientY - rect.top) * scaleY;
-        
-        // Check for double tap (pause/resume)
-        const currentTime = Date.now();
-        if (currentTime - this.touchControls.lastTapTime < 300) {
-            this.pause();
-            return;
-        }
-        this.touchControls.lastTapTime = currentTime;
         
         if (this.isPaused) return;
         
@@ -268,20 +268,34 @@ export class Game {
         }
     }
 
+    startWave(waveNumber) {
+        this.level = waveNumber;
+        this.waveInProgress = true;
+        
+        // Calculate total enemies for this wave (increases with wave number)
+        this.waveEnemiesTotal = 10 + (waveNumber - 1) * 5; // 10, 15, 20, 25...
+        this.waveEnemiesSpawned = 0;
+        this.waveEnemiesRemaining = this.waveEnemiesTotal;
+        
+        // Check if this is a boss wave (every 5 waves)
+        if (waveNumber % 5 === 0 && waveNumber > this.lastBossWave) {
+            this.waveEnemiesTotal = 0;
+            this.waveEnemiesRemaining = 0;
+            this.waveEnemiesSpawned = 0;
+            this.spawnBoss();
+        }
+    }
+
     spawnEnemy() {
+        if (!this.waveInProgress || this.bossActive) return;
+        if (this.waveEnemiesSpawned >= this.waveEnemiesTotal) return;
+        
         const x = randomInt(0, CONFIG.CANVAS_WIDTH - CONFIG.ENEMY.WIDTH);
         const y = -CONFIG.ENEMY.HEIGHT;
         const speed = CONFIG.ENEMY.BASE_SPEED + (this.level - 1) * CONFIG.LEVELS.ENEMY_SPEED_INCREASE;
         
         this.enemies.push(new Enemy(x, y, speed, this.level));
-        
-        // Spawn additional enemies based on level (3x more, max 9 at once)
-        const additionalEnemies = Math.min(Math.floor(this.level / 2) * 3, 8);
-        for (let i = 0; i < additionalEnemies; i++) {
-            const offsetX = randomInt(0, CONFIG.CANVAS_WIDTH - CONFIG.ENEMY.WIDTH);
-            const offsetY = -CONFIG.ENEMY.HEIGHT - Math.floor((i + 1) / 3) * 60;
-            this.enemies.push(new Enemy(offsetX, offsetY, speed, this.level));
-        }
+        this.waveEnemiesSpawned++;
     }
 
     spawnBoss() {
@@ -344,14 +358,27 @@ export class Game {
         
         shakeScreen(20, 1000);
         
-        // Reset boss state and return to normal waves
+        // Reset boss state and start next wave
         this.bossActive = false;
         this.boss = null;
-        this.lastBossScore = this.score; // Track when boss was defeated
+        this.lastBossWave = this.level;
+        
+        // Start next wave after a delay
+        setTimeout(() => {
+            this.startWave(this.level + 1);
+        }, 3000);
     }
 
     grantBossReward() {
         if (!this.player) return;
+        
+        // Show special boss reward selection
+        this.showBossRewardSelection();
+    }
+    
+    showBossRewardSelection() {
+        const abilityOverlay = document.getElementById('ability-overlay');
+        const abilityChoices = document.getElementById('ability-choices');
         
         // Boss rewards - powerful unique abilities
         const bossRewards = [
@@ -391,22 +418,93 @@ export class Game {
             },
             {
                 name: '🎆 Fireworks',
+                description: '연속 폭발 탄환 발사',
                 effect: () => {
                     this.player.powerUps.fireworks = true;
+                }
+            },
+            {
+                name: '🌌 Galaxy Blast',
+                description: '화면 전체 적 소멸 + 공격력 증가',
+                effect: () => {
+                    // Clear all enemies
+                    for (const enemy of this.enemies) {
+                        enemy.destroy();
+                    }
+                    this.enemies = [];
+                    CONFIG.BULLET.DAMAGE += 50;
+                }
+            },
+            {
+                name: '⭐ Supernova',
+                description: '초대형 노바 + 공격력 대폭 증가',
+                effect: () => {
+                    this.player.powerUps.nova = true;
+                    CONFIG.BULLET.DAMAGE += 40;
+                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown * 0.7);
+                }
+            },
+            {
+                name: '🔮 Mystic Shield',
+                description: '5초 무적 + 체력 완전 회복',
+                effect: () => {
+                    this.player.health = this.player.maxHealth;
+                    this.player.powerUps.godMode = true;
+                    this.player.godModeEndTime = Date.now() + 5000;
                 }
             }
         ];
         
-        const reward = randomChoice(bossRewards);
-        reward.effect();
+        // Select 3 random boss rewards
+        const selectedRewards = [];
+        const usedIndices = new Set();
         
-        // Show reward notification
-        this.effects.push(new TextEffect(
-            CONFIG.CANVAS_WIDTH / 2,
-            CONFIG.CANVAS_HEIGHT / 2 + 50,
-            `획득: ${reward.name}`,
-            '#FF00FF'
-        ));
+        while (selectedRewards.length < 3 && selectedRewards.length < bossRewards.length) {
+            const index = Math.floor(Math.random() * bossRewards.length);
+            if (!usedIndices.has(index)) {
+                selectedRewards.push(bossRewards[index]);
+                usedIndices.add(index);
+            }
+        }
+        
+        // Create reward buttons
+        abilityChoices.innerHTML = '';
+        selectedRewards.forEach(reward => {
+            const button = document.createElement('button');
+            button.className = 'ability-button tier-SSS';
+            button.style.borderColor = '#FF0066';
+            button.innerHTML = `
+                <div class="ability-tier" style="color: #FF0066">[BOSS REWARD]</div>
+                <div class="ability-name">${reward.name}</div>
+                <div class="ability-description">${reward.description || '특별한 보스 보상'}</div>
+            `;
+            button.addEventListener('click', () => {
+                try {
+                    reward.effect();
+                    this.hideAbilitySelection();
+                    this.isPaused = false;
+                    this.updateUI();
+                    
+                    // Show reward message
+                    this.effects.push(new TextEffect(
+                        CONFIG.CANVAS_WIDTH / 2,
+                        CONFIG.CANVAS_HEIGHT / 2 + 50,
+                        `획득: ${reward.name}`,
+                        '#FF00FF'
+                    ));
+                } catch (error) {
+                    console.error('Boss reward error:', error);
+                    this.hideAbilitySelection();
+                    this.isPaused = false;
+                    this.updateUI();
+                }
+            });
+            abilityChoices.appendChild(button);
+        });
+        
+        // Pause game and show overlay
+        this.isPaused = true;
+        abilityOverlay.classList.remove('hidden');
     }
 
     // PowerUp system removed for gameplay balance
@@ -690,7 +788,22 @@ export class Game {
             // Remove only if destroyed
             if (!enemy.active) {
                 this.enemies.splice(i, 1);
+                if (this.waveInProgress) {
+                    this.waveEnemiesRemaining--;
+                }
             }
+        }
+        
+        // Check if wave is complete
+        if (this.waveInProgress && 
+            !this.bossActive &&
+            this.waveEnemiesSpawned >= this.waveEnemiesTotal &&
+            this.enemies.length === 0) {
+            // Wave complete, start next wave
+            this.waveInProgress = false;
+            setTimeout(() => {
+                this.startWave(this.level + 1);
+            }, 2000);
         }
 
         // Update and draw bullets
@@ -1438,6 +1551,10 @@ export class Game {
     updateUI() {
         document.getElementById('score').textContent = this.score;
         document.getElementById('level').textContent = this.level;
+        
+        // Update remaining enemies count
+        const remainingCount = this.bossActive ? (this.boss && this.boss.active ? 1 : 0) : this.waveEnemiesRemaining;
+        document.getElementById('remaining-enemies').textContent = remainingCount;
         
         // Update experience bar
         const expPercent = (this.experience / this.experienceToNextLevel) * 100;
