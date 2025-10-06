@@ -114,8 +114,10 @@ export class Boss extends GameObject {
         // Draw boss emoji (larger)
         ctx.font = `${this.height}px Arial`;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.emoji, this.x + this.width / 2, this.y + this.height / 2);
+        ctx.textBaseline = 'alphabetic';
+        // Adjust position to center the emoji properly
+        const emojiY = this.y + this.height * 0.85;
+        ctx.fillText(this.emoji, this.x + this.width / 2, emojiY);
         
         ctx.restore();
     }
