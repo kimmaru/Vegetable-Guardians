@@ -16,8 +16,8 @@ export const CONFIG = {
     
     // Enemy settings
     ENEMY: {
-        WIDTH: 40,
-        HEIGHT: 40,
+        WIDTH: 60, // Increased from 40 to 60 (50% larger)
+        HEIGHT: 60, // Increased from 40 to 60 (50% larger)
         BASE_SPEED: 0.5, // Increased from 0.3 to 0.5
         BASE_HEALTH: 25, // Reduced from 50 to 25 (half)
         SPAWN_INTERVAL: 3000, // Increased from 2000 to 3000ms

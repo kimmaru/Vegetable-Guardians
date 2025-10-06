@@ -44,16 +44,16 @@ export class PowerUp extends GameObject {
         ctx.fill();
         ctx.globalAlpha = 1;
 
-        // Draw emoji (reduced size to prevent stretching)
+        // Draw emoji with horizontal scaling
         ctx.shadowBlur = 0;
         ctx.font = `${this.height * 0.6}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(
-            this.config.emoji,
-            this.x + this.width / 2,
-            this.y + this.height / 2
-        );
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.scale(1.5, 1); // Scale horizontally 1.5x, vertically 1x
+        ctx.fillText(this.config.emoji, 0, 0);
+        ctx.restore();
         
         ctx.restore();
     }

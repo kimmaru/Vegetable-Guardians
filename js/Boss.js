@@ -111,11 +111,15 @@ export class Boss extends GameObject {
         ctx.shadowColor = this.phase === 2 ? '#FF0000' : this.phase === 1 ? '#FF6B00' : '#FFD700';
         ctx.shadowBlur = 20 + Math.sin(this.time / 100) * 10;
         
-        // Draw boss emoji (reduced size to prevent stretching)
+        // Draw boss emoji with horizontal scaling
         ctx.font = `${this.height * 0.7}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.emoji, this.x + this.width / 2, this.y + this.height / 2);
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.scale(1.5, 1); // Scale horizontally 1.5x, vertically 1x
+        ctx.fillText(this.emoji, 0, 0);
+        ctx.restore();
         
         ctx.restore();
     }

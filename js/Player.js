@@ -76,11 +76,15 @@ export class Player extends GameObject {
             ctx.restore();
         }
 
-        // Draw player emoji (reduced size to prevent stretching)
+        // Draw player emoji with horizontal scaling
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.scale(1.5, 1); // Scale horizontally 1.5x, vertically 1x
         ctx.font = `${this.height * 0.7}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.emoji, this.x + this.width / 2, this.y + this.height / 2);
+        ctx.fillText(this.emoji, 0, 0);
+        ctx.restore();
 
         // Draw power-up indicators
         this.drawPowerUpIndicators(ctx);
