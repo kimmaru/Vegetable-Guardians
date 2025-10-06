@@ -10,7 +10,7 @@ export const CONFIG = {
         HEIGHT: 50,
         SPEED: 3, // Reduced from 6 to 3 (50% slower)
         MAX_HEALTH: 100,
-        SHOOT_COOLDOWN: 350, // Increased from 250 to 350ms
+        SHOOT_COOLDOWN: 1050, // Increased to 1050ms (3x slower)
         COLOR: '#4CAF50',
     },
     
@@ -19,7 +19,7 @@ export const CONFIG = {
         WIDTH: 40,
         HEIGHT: 40,
         BASE_SPEED: 0.6, // Reduced from 1.2 to 0.6 (50% slower)
-        BASE_HEALTH: 25, // Starting health
+        BASE_HEALTH: 50, // Increased from 25 to 50 (2x health)
         SPAWN_INTERVAL: 3000, // Increased from 2000 to 3000ms
         MIN_SPAWN_INTERVAL: 1200, // Increased from 800 to 1200ms
         POINTS: 10,

@@ -233,19 +233,28 @@ body {
 
 .ability-button {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 3px solid rgba(255, 255, 255, 0.3);
     border-radius: 15px;
     padding: 20px;
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: left;
+    position: relative;
 }
 
 .ability-button:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.6);
-    border-color: rgba(255, 255, 255, 0.8);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.8);
+    border-width: 4px;
+}
+
+.ability-tier {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px currentColor;
+    letter-spacing: 2px;
 }
 
 .ability-name {
@@ -257,6 +266,55 @@ body {
 .ability-description {
     font-size: 0.95em;
     color: rgba(255, 255, 255, 0.9);
+}
+
+/* Tier-specific styles */
+.tier-SSS {
+    background: linear-gradient(135deg, #FF0066 0%, #CC0052 100%);
+    animation: pulse-sss 2s ease-in-out infinite;
+}
+
+.tier-SS {
+    background: linear-gradient(135deg, #FF6B00 0%, #CC5500 100%);
+    animation: pulse-ss 2.5s ease-in-out infinite;
+}
+
+.tier-S {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+}
+
+.tier-A {
+    background: linear-gradient(135deg, #00FF88 0%, #00CC66 100%);
+}
+
+.tier-B {
+    background: linear-gradient(135deg, #00CCFF 0%, #0099CC 100%);
+}
+
+.tier-C {
+    background: linear-gradient(135deg, #9370DB 0%, #7B5FAA 100%);
+}
+
+.tier-D {
+    background: linear-gradient(135deg, #A0A0A0 0%, #707070 100%);
+}
+
+@keyframes pulse-sss {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 0, 102, 0.8);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(255, 0, 102, 1);
+    }
+}
+
+@keyframes pulse-ss {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(255, 107, 0, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 107, 0, 0.9);
+    }
 }
 
 /* Overlays */

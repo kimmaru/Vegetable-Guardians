@@ -211,7 +211,20 @@ export class Game {
         const bulletX = this.player.x + this.player.width / 2 - CONFIG.BULLET.WIDTH / 2;
         const bulletY = this.player.y;
 
-        if (this.player.powerUps.tripleShot) {
+        if (this.player.powerUps.pentaShot) {
+            // Shoot five bullets
+            this.bullets.push(new Bullet(bulletX - 30, bulletY, true));
+            this.bullets.push(new Bullet(bulletX - 15, bulletY, true));
+            this.bullets.push(new Bullet(bulletX, bulletY, true));
+            this.bullets.push(new Bullet(bulletX + 15, bulletY, true));
+            this.bullets.push(new Bullet(bulletX + 30, bulletY, true));
+        } else if (this.player.powerUps.quadShot) {
+            // Shoot four bullets
+            this.bullets.push(new Bullet(bulletX - 22, bulletY, true));
+            this.bullets.push(new Bullet(bulletX - 7, bulletY, true));
+            this.bullets.push(new Bullet(bulletX + 7, bulletY, true));
+            this.bullets.push(new Bullet(bulletX + 22, bulletY, true));
+        } else if (this.player.powerUps.tripleShot) {
             // Shoot three bullets
             this.bullets.push(new Bullet(bulletX - 15, bulletY, true));
             this.bullets.push(new Bullet(bulletX, bulletY, true));
@@ -233,11 +246,11 @@ export class Game {
         
         this.enemies.push(new Enemy(x, y, speed, this.level));
         
-        // Spawn additional enemies based on level (max 3 at once)
-        const additionalEnemies = Math.min(Math.floor(this.level / 3), 2);
+        // Spawn additional enemies based on level (3x more, max 9 at once)
+        const additionalEnemies = Math.min(Math.floor(this.level / 2) * 3, 8);
         for (let i = 0; i < additionalEnemies; i++) {
             const offsetX = randomInt(0, CONFIG.CANVAS_WIDTH - CONFIG.ENEMY.WIDTH);
-            const offsetY = -CONFIG.ENEMY.HEIGHT - (i + 1) * 60;
+            const offsetY = -CONFIG.ENEMY.HEIGHT - Math.floor((i + 1) / 3) * 60;
             this.enemies.push(new Enemy(offsetX, offsetY, speed, this.level));
         }
     }
@@ -596,7 +609,7 @@ export class Game {
     levelUp() {
         this.playerLevel++;
         this.experience -= this.experienceToNextLevel;
-        this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.5);
+        this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.2); // Changed from 1.5 to 1.2
         
         // Pause game and show ability selection
         this.isPaused = true;
@@ -634,43 +647,96 @@ export class Game {
         const abilityOverlay = document.getElementById('ability-overlay');
         const abilityChoices = document.getElementById('ability-choices');
         
-        // Define available abilities
+        // Define available abilities with rarity
         const abilities = [
+            // SSS Tier (0.5% chance)
             { 
-                id: 'maxHealth', 
-                name: '💪 최대 체력 증가', 
-                description: '최대 체력 +20',
+                id: 'godMode', 
+                tier: 'SSS',
+                name: '👑 절대 방어', 
+                description: '5초간 무적 상태 (재사용 60초)',
                 effect: () => {
-                    this.player.maxHealth += 20;
-                    this.player.health = Math.min(this.player.health + 20, this.player.maxHealth);
+                    this.player.powerUps.godMode = true;
                 }
             },
             { 
-                id: 'damage', 
-                name: '⚔️ 공격력 증가', 
-                description: '총알 공격력 +15',
+                id: 'timeSlow', 
+                tier: 'SSS',
+                name: '⏰ 시간 왜곡', 
+                description: '적 속도 70% 감소',
                 effect: () => {
-                    CONFIG.BULLET.DAMAGE += 15;
+                    this.player.powerUps.timeSlow = true;
+                }
+            },
+            // SS Tier (2% chance)
+            { 
+                id: 'pentaShot', 
+                tier: 'SS',
+                name: '🌟 펜타샷', 
+                description: '5발 동시 발사',
+                effect: () => {
+                    this.player.powerUps.pentaShot = true;
                 }
             },
             { 
-                id: 'speed', 
-                name: '🏃 이동 속도 증가', 
-                description: '이동 속도 +1',
+                id: 'orbital', 
+                tier: 'SS',
+                name: '🛸 궤도 위성', 
+                description: '3개의 위성이 주위를 공격',
                 effect: () => {
-                    this.player.speed += 1;
+                    this.player.powerUps.orbital = true;
                 }
             },
             { 
-                id: 'shootSpeed', 
-                name: '⚡ 발사 속도 증가', 
-                description: '발사 쿨다운 -50ms',
+                id: 'megaExplosion', 
+                tier: 'SS',
+                name: '💥 메가 폭발', 
+                description: '폭발 범위 +100%, 데미지 +50',
                 effect: () => {
-                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown - 50);
+                    this.player.powerUps.megaExplosion = true;
                 }
             },
+            // S Tier (5% chance)
+            { 
+                id: 'quadShot', 
+                tier: 'S',
+                name: '🎯 쿼드샷', 
+                description: '4발 동시 발사',
+                effect: () => {
+                    this.player.powerUps.quadShot = true;
+                }
+            },
+            { 
+                id: 'laserBeam', 
+                tier: 'S',
+                name: '🔆 레이저 빔', 
+                description: '관통 레이저 발사',
+                effect: () => {
+                    this.player.powerUps.laserBeam = true;
+                }
+            },
+            { 
+                id: 'homingMissile', 
+                tier: 'S',
+                name: '🚀 유도 미사일', 
+                description: '적을 추적하는 미사일',
+                effect: () => {
+                    this.player.powerUps.homingMissile = true;
+                }
+            },
+            { 
+                id: 'chainLightning', 
+                tier: 'S',
+                name: '⚡ 연쇄 번개', 
+                description: '적에서 적으로 튕기는 번개',
+                effect: () => {
+                    this.player.powerUps.chainLightning = true;
+                }
+            },
+            // A Tier (10% chance)
             { 
                 id: 'tripleShot', 
+                tier: 'A',
                 name: '🎯 트리플샷', 
                 description: '3발 동시 발사',
                 effect: () => {
@@ -679,103 +745,220 @@ export class Game {
             },
             { 
                 id: 'piercing', 
+                tier: 'A',
                 name: '🔥 관통 탄환', 
-                description: '총알이 적을 관통함',
+                description: '총알이 3명까지 관통',
                 effect: () => {
                     this.player.powerUps.piercing = true;
-                }
-            },
-            { 
-                id: 'bulletSize', 
-                name: '💥 대형 탄환', 
-                description: '총알 크기 +50%',
-                effect: () => {
-                    CONFIG.BULLET.WIDTH *= 1.5;
-                    CONFIG.BULLET.HEIGHT *= 1.5;
-                }
-            },
-            { 
-                id: 'regen', 
-                name: '❤️‍🩹 체력 재생', 
-                description: '초당 체력 +1',
-                effect: () => {
-                    this.player.powerUps.regen = true;
-                }
-            },
-            { 
-                id: 'magnetism', 
-                name: '🧲 자석', 
-                description: '파워업 자동 흡수',
-                effect: () => {
-                    this.player.powerUps.magnetism = true;
+                    this.player.piercingCount = 3;
                 }
             },
             { 
                 id: 'explosive', 
+                tier: 'A',
                 name: '💣 폭발 탄환', 
-                description: '적 처치시 폭발 데미지',
+                description: '적 처치시 광역 데미지',
                 effect: () => {
                     this.player.powerUps.explosive = true;
                 }
             },
             { 
-                id: 'laser', 
-                name: '🔆 레이저 빔', 
-                description: '직선 레이저 발사',
+                id: 'multiShot', 
+                tier: 'A',
+                name: '🔫 멀티샷', 
+                description: '발사 횟수 +1',
                 effect: () => {
-                    this.player.powerUps.laser = true;
+                    this.player.multiShotCount = (this.player.multiShotCount || 1) + 1;
                 }
             },
             { 
-                id: 'wave', 
-                name: '🌊 충격파', 
-                description: '주기적 광역 공격',
+                id: 'drone', 
+                tier: 'A',
+                name: '🤖 전투 드론', 
+                description: '자동 공격 드론 소환',
                 effect: () => {
-                    this.player.powerUps.wave = true;
-                    this.player.lastWaveTime = Date.now();
+                    this.player.droneCount = (this.player.droneCount || 0) + 1;
+                }
+            },
+            // B Tier (20% chance)
+            { 
+                id: 'damageUp2', 
+                tier: 'B',
+                name: '⚔️ 공격력 강화', 
+                description: '공격력 +20',
+                effect: () => {
+                    CONFIG.BULLET.DAMAGE += 20;
                 }
             },
             { 
-                id: 'vampire', 
-                name: '🧛 흡혈', 
-                description: '데미지의 10% 체력 회복',
+                id: 'fireRateUp2', 
+                tier: 'B',
+                name: '⚡ 연사 강화', 
+                description: '발사 속도 +30%',
                 effect: () => {
-                    this.player.powerUps.vampire = true;
+                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown * 0.7);
+                }
+            },
+            { 
+                id: 'bulletSize', 
+                tier: 'B',
+                name: '💥 대형 탄환', 
+                description: '총알 크기 +40%',
+                effect: () => {
+                    CONFIG.BULLET.WIDTH *= 1.4;
+                    CONFIG.BULLET.HEIGHT *= 1.4;
                 }
             },
             { 
                 id: 'criticalHit', 
+                tier: 'B',
                 name: '✨ 치명타', 
-                description: '20% 확률로 2배 데미지',
+                description: '25% 확률로 2.5배 데미지',
                 effect: () => {
                     this.player.powerUps.criticalHit = true;
+                    this.player.critChance = 0.25;
+                    this.player.critMultiplier = 2.5;
+                }
+            },
+            { 
+                id: 'boomerang', 
+                tier: 'B',
+                name: '🪃 부메랑', 
+                description: '돌아오는 부메랑 발사',
+                effect: () => {
+                    this.player.powerUps.boomerang = true;
+                }
+            },
+            // C Tier (30% chance)
+            { 
+                id: 'damageUp', 
+                tier: 'C',
+                name: '⚔️ 공격력 증가', 
+                description: '공격력 +12',
+                effect: () => {
+                    CONFIG.BULLET.DAMAGE += 12;
+                }
+            },
+            { 
+                id: 'fireRateUp', 
+                tier: 'C',
+                name: '⚡ 연사 증가', 
+                description: '발사 속도 +20%',
+                effect: () => {
+                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown * 0.8);
+                }
+            },
+            { 
+                id: 'bulletSpeed', 
+                tier: 'C',
+                name: '💨 탄환 가속', 
+                description: '총알 속도 +30%',
+                effect: () => {
+                    CONFIG.BULLET.SPEED *= 1.3;
                 }
             },
             { 
                 id: 'freezing', 
+                tier: 'C',
                 name: '❄️ 냉동 탄환', 
-                description: '적을 50% 둔화',
+                description: '적 속도 40% 감소',
                 effect: () => {
                     this.player.powerUps.freezing = true;
+                }
+            },
+            // D Tier (32.5% chance)
+            { 
+                id: 'damageUpSmall', 
+                tier: 'D',
+                name: '⚔️ 공격력 소폭 증가', 
+                description: '공격력 +8',
+                effect: () => {
+                    CONFIG.BULLET.DAMAGE += 8;
+                }
+            },
+            { 
+                id: 'fireRateUpSmall', 
+                tier: 'D',
+                name: '⚡ 연사 소폭 증가', 
+                description: '발사 속도 +15%',
+                effect: () => {
+                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown * 0.85);
+                }
+            },
+            { 
+                id: 'regen', 
+                tier: 'D',
+                name: '❤️‍🩹 체력 재생', 
+                description: '초당 체력 +2',
+                effect: () => {
+                    this.player.powerUps.regen = true;
+                    this.player.regenAmount = 2;
+                }
+            },
+            { 
+                id: 'magnetism', 
+                tier: 'D',
+                name: '🧲 자석', 
+                description: '파워업 흡수 범위 증가',
+                effect: () => {
+                    this.player.powerUps.magnetism = true;
                 }
             }
         ];
         
-        // Randomly select 3 abilities
+        // Tier weights for rarity
+        const tierWeights = {
+            'SSS': 0.5,
+            'SS': 2,
+            'S': 5,
+            'A': 10,
+            'B': 20,
+            'C': 30,
+            'D': 32.5
+        };
+        
+        // Select 3 abilities based on weighted random
         const selectedAbilities = [];
-        const availableAbilities = [...abilities];
-        for (let i = 0; i < Math.min(3, availableAbilities.length); i++) {
-            const index = Math.floor(Math.random() * availableAbilities.length);
-            selectedAbilities.push(availableAbilities[index]);
-            availableAbilities.splice(index, 1);
+        for (let i = 0; i < 3; i++) {
+            const roll = Math.random() * 100;
+            let cumulative = 0;
+            let selectedTier = 'D';
+            
+            for (const [tier, weight] of Object.entries(tierWeights)) {
+                cumulative += weight;
+                if (roll < cumulative) {
+                    selectedTier = tier;
+                    break;
+                }
+            }
+            
+            // Filter abilities by selected tier
+            const tierAbilities = abilities.filter(a => a.tier === selectedTier);
+            if (tierAbilities.length > 0) {
+                const randomAbility = tierAbilities[Math.floor(Math.random() * tierAbilities.length)];
+                selectedAbilities.push(randomAbility);
+            }
         }
+        
+        // Tier colors
+        const tierColors = {
+            'SSS': '#FF0066',
+            'SS': '#FF6B00',
+            'S': '#FFD700',
+            'A': '#00FF88',
+            'B': '#00CCFF',
+            'C': '#9370DB',
+            'D': '#A0A0A0'
+        };
         
         // Create ability buttons
         abilityChoices.innerHTML = '';
         selectedAbilities.forEach(ability => {
             const button = document.createElement('button');
-            button.className = 'ability-button';
+            button.className = `ability-button tier-${ability.tier}`;
+            button.style.borderColor = tierColors[ability.tier];
             button.innerHTML = `
+                <div class="ability-tier" style="color: ${tierColors[ability.tier]}">[${ability.tier}]</div>
                 <div class="ability-name">${ability.name}</div>
                 <div class="ability-description">${ability.description}</div>
             `;
