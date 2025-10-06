@@ -217,6 +217,29 @@ export class Game {
         const bulletX = this.player.x + this.player.width / 2 - CONFIG.BULLET.WIDTH / 2;
         const bulletY = this.player.y;
 
+        // Boomerang
+        if (this.player.powerUps.boomerang) {
+            const now = Date.now();
+            this.player.boomerangs.push({
+                x: this.player.x + this.player.width / 2,
+                y: this.player.y,
+                time: 0,
+                vx: Math.random() * 4 - 2
+            });
+        }
+
+        // Spiral Shot
+        if (this.player.powerUps.spiralShot) {
+            for (let i = 0; i < 8; i++) {
+                const angle = this.player.spiralAngle + (i / 8) * Math.PI * 2;
+                const bullet = new Bullet(bulletX, bulletY, true);
+                bullet.vx = Math.cos(angle) * 3;
+                bullet.vy = -5 + Math.sin(angle) * 3;
+                this.bullets.push(bullet);
+            }
+            return;
+        }
+
         if (this.player.powerUps.pentaShot) {
             // Shoot five bullets
             this.bullets.push(new Bullet(bulletX - 30, bulletY, true));
@@ -388,9 +411,80 @@ export class Game {
 
     // PowerUp system removed for gameplay balance
 
+    triggerNova() {
+        if (!this.player) return;
+        
+        const centerX = this.player.x + this.player.width / 2;
+        const centerY = this.player.y + this.player.height / 2;
+        
+        // Create 16 bullets in all directions
+        for (let i = 0; i < 16; i++) {
+            const angle = (i / 16) * Math.PI * 2;
+            const bullet = new Bullet(centerX, centerY, true);
+            bullet.vx = Math.cos(angle) * 6;
+            bullet.vy = Math.sin(angle) * 6;
+            this.bullets.push(bullet);
+        }
+        
+        // Visual effect
+        for (let i = 0; i < 20; i++) {
+            this.particles.push(new Particle(centerX, centerY, randomChoice(['⭐', '✨', '💫'])));
+        }
+    }
+    
+    triggerShockwave() {
+        if (!this.player) return;
+        
+        const centerX = this.player.x + this.player.width / 2;
+        const centerY = this.player.y + this.player.height / 2;
+        const shockwaveRadius = 150;
+        
+        // Push back and damage enemies
+        for (const enemy of this.enemies) {
+            const dx = (enemy.x + enemy.width / 2) - centerX;
+            const dy = (enemy.y + enemy.height / 2) - centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < shockwaveRadius) {
+                enemy.takeDamage(30);
+                // Push enemy away
+                enemy.x += (dx / dist) * 30;
+                enemy.y += (dy / dist) * 30;
+            }
+        }
+        
+        // Visual effect
+        for (let i = 0; i < 30; i++) {
+            this.particles.push(new Particle(centerX, centerY, '💨'));
+        }
+    }
+    
+    triggerToxicCloud() {
+        if (!this.player) return;
+        
+        const centerX = this.player.x + this.player.width / 2;
+        const centerY = this.player.y + this.player.height / 2;
+        
+        // Damage nearby enemies over time
+        for (const enemy of this.enemies) {
+            const dx = (enemy.x + enemy.width / 2) - centerX;
+            const dy = (enemy.y + enemy.height / 2) - centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 120) {
+                enemy.takeDamage(10);
+            }
+        }
+        
+        // Visual effect
+        for (let i = 0; i < 15; i++) {
+            this.particles.push(new Particle(centerX + Math.random() * 100 - 50, centerY + Math.random() * 100 - 50, '☠️'));
+        }
+    }
+
     createExplosion(x, y) {
         // Damage nearby enemies
-        const explosionRadius = 80;
+        const explosionRadius = this.player && this.player.powerUps.megaExplosion ? 200 : 80;
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             const dx = (enemy.x + enemy.width / 2) - x;
@@ -398,11 +492,12 @@ export class Game {
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < explosionRadius) {
-                enemy.takeDamage(30);
+                const damage = this.player && this.player.powerUps.megaExplosion ? 80 : 30;
+                enemy.takeDamage(damage);
                 this.effects.push(new TextEffect(
                     enemy.x + enemy.width / 2,
                     enemy.y - 10,
-                    '30',
+                    damage.toString(),
                     '#FF4444'
                 ));
             }
@@ -435,6 +530,68 @@ export class Game {
         // Auto shooting - simplified to just shoot when ready
         if (this.autoShoot && this.player) {
             this.shoot();
+            
+            const now = Date.now();
+            
+            // Drone shooting
+            if (this.player.drones.length > 0) {
+                for (const drone of this.player.drones) {
+                    if (now - drone.lastShot > 800) {
+                        this.bullets.push(new Bullet(drone.x - 3, drone.y - 10, true));
+                        drone.lastShot = now;
+                    }
+                }
+            }
+            
+            // Nova periodic trigger
+            if (this.player.powerUps.nova && now - this.player.lastNovaTime > 4000) {
+                this.triggerNova();
+                this.player.lastNovaTime = now;
+            }
+            
+            // Shockwave periodic trigger
+            if (this.player.powerUps.shockwave && now - this.player.lastShockwaveTime > 3000) {
+                this.triggerShockwave();
+                this.player.lastShockwaveTime = now;
+            }
+            
+            // Toxic Cloud periodic trigger
+            if (this.player.powerUps.toxicCloud && now - this.player.lastToxicCloudTime > 2000) {
+                this.triggerToxicCloud();
+                this.player.lastToxicCloudTime = now;
+            }
+            
+            // Orbital damage to nearby enemies
+            if (this.player.orbitals.length > 0) {
+                for (const orb of this.player.orbitals) {
+                    for (let i = this.enemies.length - 1; i >= 0; i--) {
+                        const enemy = this.enemies[i];
+                        const dx = orb.x - (enemy.x + enemy.width / 2);
+                        const dy = orb.y - (enemy.y + enemy.height / 2);
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 20) {
+                            enemy.takeDamage(orb.damage);
+                        }
+                    }
+                }
+            }
+            
+            // Boomerang damage
+            if (this.player.boomerangs.length > 0) {
+                for (const boom of this.player.boomerangs) {
+                    for (let i = this.enemies.length - 1; i >= 0; i--) {
+                        const enemy = this.enemies[i];
+                        const dx = boom.x - (enemy.x + enemy.width / 2);
+                        const dy = boom.y - (enemy.y + enemy.height / 2);
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 25) {
+                            enemy.takeDamage(40);
+                        }
+                    }
+                }
+            }
         }
 
         // Update player
@@ -485,7 +642,36 @@ export class Game {
         // Update and draw enemies
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
-            enemy.update(deltaTime);
+            
+            // Time Slow effect
+            if (this.player && this.player.powerUps.timeSlow) {
+                enemy.vy *= 0.3; // Slow down 70%
+                enemy.update(deltaTime);
+                enemy.vy /= 0.3; // Restore
+            } else {
+                enemy.update(deltaTime);
+            }
+            
+            // Black hole pull
+            if (this.player && this.player.blackHoles.length > 0) {
+                for (const bh of this.player.blackHoles) {
+                    const dx = bh.x - (enemy.x + enemy.width / 2);
+                    const dy = bh.y - (enemy.y + enemy.height / 2);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < bh.pullRadius) {
+                        const pullStrength = (1 - dist / bh.pullRadius) * 3;
+                        enemy.x += (dx / dist) * pullStrength;
+                        enemy.y += (dy / dist) * pullStrength;
+                        
+                        // Damage if very close
+                        if (dist < bh.size) {
+                            enemy.takeDamage(5);
+                        }
+                    }
+                }
+            }
+            
             enemy.draw(this.ctx);
 
             // Enemy shooting
@@ -496,10 +682,10 @@ export class Game {
             }
 
             // Respawn at top if enemy reaches bottom (no damage)
-            if (enemy.y > CONFIG.CANVAS_HEIGHT && enemy.active) {
+                if (enemy.y > CONFIG.CANVAS_HEIGHT && enemy.active) {
                 enemy.y = -enemy.height;
                 enemy.x = randomInt(0, CONFIG.CANVAS_WIDTH - enemy.width);
-            }
+                }
             
             // Remove only if destroyed
             if (!enemy.active) {
@@ -658,7 +844,7 @@ export class Game {
                     
                     // Piercing bullets don't get destroyed
                     if (!this.player || !this.player.powerUps.piercing) {
-                        bullet.destroy();
+                    bullet.destroy();
                     }
 
                     if (destroyed) {
@@ -692,7 +878,7 @@ export class Game {
                     }
                     
                     if (!this.player || !this.player.powerUps.piercing) {
-                        break;
+                    break;
                     }
                 }
             }
@@ -828,7 +1014,12 @@ export class Game {
                 name: '👑 절대 방어', 
                 description: '5초간 무적 상태 (재사용 60초)',
                 effect: () => {
-                    this.player.powerUps.godMode = true;
+                    const currentTime = Date.now();
+                    if (currentTime - this.player.lastGodModeUse > 60000) {
+                        this.player.powerUps.godMode = true;
+                        this.player.godModeEndTime = currentTime + 5000;
+                        this.player.lastGodModeUse = currentTime;
+                    }
                 }
             },
             { 
@@ -857,6 +1048,10 @@ export class Game {
                 description: '3개의 위성이 주위를 공격',
                 effect: () => {
                     this.player.powerUps.orbital = true;
+                    this.player.orbitalCount += 3;
+                    for (let i = 0; i < 3; i++) {
+                        this.player.orbitals.push({x: this.player.x, y: this.player.y, damage: 30});
+                    }
                 }
             },
             { 
@@ -875,6 +1070,14 @@ export class Game {
                 description: '적을 빨아들이는 블랙홀 생성',
                 effect: () => {
                     this.player.powerUps.blackHole = true;
+                    // Create a black hole
+                    this.player.blackHoles.push({
+                        x: CONFIG.CANVAS_WIDTH / 2,
+                        y: CONFIG.CANVAS_HEIGHT / 3,
+                        time: 0,
+                        size: 40,
+                        pullRadius: 200
+                    });
                 }
             },
             {
@@ -985,7 +1188,12 @@ export class Game {
                 name: '🤖 전투 드론', 
                 description: '자동 공격 드론 소환',
                 effect: () => {
-                    this.player.droneCount = (this.player.droneCount || 0) + 1;
+                    this.player.droneCount += 1;
+                    this.player.drones.push({
+                        x: this.player.x,
+                        y: this.player.y,
+                        lastShot: 0
+                    });
                 }
             },
             {
@@ -1053,6 +1261,17 @@ export class Game {
                 description: '돌아오는 부메랑 발사',
                 effect: () => {
                     this.player.powerUps.boomerang = true;
+                }
+            },
+            {
+                id: 'nova',
+                tier: 'B',
+                name: '💫 노바', 
+                description: '360도 전방향 공격',
+                effect: () => {
+                    this.player.powerUps.nova = true;
+                    // Trigger nova immediately
+                    this.triggerNova();
                 }
             },
             {
