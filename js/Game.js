@@ -815,11 +815,18 @@ export class Game {
             
             enemy.draw(this.ctx);
 
-            // Enemy shooting
-            if (enemy.shouldShoot()) {
-                const bulletX = enemy.x + enemy.width / 2 - CONFIG.ENEMY_BULLET.WIDTH / 2;
-                const bulletY = enemy.y + enemy.height;
-                this.bullets.push(new Bullet(bulletX, bulletY, false));
+            // Enemy shooting with varied patterns
+            if (enemy.shouldShoot() && this.player) {
+                const playerCenterX = this.player.x + this.player.width / 2;
+                const playerCenterY = this.player.y + this.player.height / 2;
+                const bulletPatterns = enemy.getBulletPattern(playerCenterX, playerCenterY);
+                
+                for (const pattern of bulletPatterns) {
+                    const bullet = new Bullet(pattern.x, pattern.y, false);
+                    bullet.vx = pattern.vx;
+                    bullet.vy = pattern.vy;
+                    this.bullets.push(bullet);
+                }
             }
 
             // Respawn at top if enemy reaches bottom (no damage)
@@ -1289,6 +1296,9 @@ export class Game {
                 description: '주기적으로 전방위 탄환 발사',
                 effect: () => {
                     this.player.powerUps.nova = true;
+                    if (!this.player.lastNovaTime) {
+                        this.player.lastNovaTime = 0;
+                    }
                     // Trigger nova immediately
                     this.triggerNova();
                 }
@@ -1361,6 +1371,9 @@ export class Game {
                 description: '주변 적을 밀어내는 충격파',
                 effect: () => {
                     this.player.powerUps.shockwave = true;
+                    if (!this.player.lastShockwaveTime) {
+                        this.player.lastShockwaveTime = 0;
+                    }
                 }
             },
             {
@@ -1370,6 +1383,9 @@ export class Game {
                 description: '지속 데미지를 주는 독구름',
                 effect: () => {
                     this.player.powerUps.toxicCloud = true;
+                    if (!this.player.lastToxicCloudTime) {
+                        this.player.lastToxicCloudTime = 0;
+                    }
                 }
             },
             // B Tier (20% chance)

@@ -19,18 +19,18 @@ export class Enemy extends GameObject {
     }
     
     getShootingPatternByEmoji(emoji) {
-        // Map each emoji to shooting ability and pattern
+        // Map each emoji to shooting ability, pattern, and bullet type
         const shootingPatterns = {
-            '👾': { canShoot: true, interval: 3000 },   // Fast shooter
-            '👻': { canShoot: false, interval: 0 },      // No shooting
-            '🦠': { canShoot: true, interval: 4000 },   // Medium shooter
-            '💀': { canShoot: true, interval: 2500 },   // Very fast shooter
-            '🐛': { canShoot: false, interval: 0 },      // No shooting
-            '🦂': { canShoot: true, interval: 3500 },   // Medium-fast shooter
-            '🕷️': { canShoot: true, interval: 4500 },  // Slow shooter
-            '🦗': { canShoot: false, interval: 0 }       // No shooting
+            '👾': { canShoot: true, interval: 3000, bulletType: 'single' },   // Single bullet
+            '👻': { canShoot: false, interval: 0, bulletType: 'none' },        // No shooting
+            '🦠': { canShoot: true, interval: 4000, bulletType: 'spread' },   // Spread shot (3 bullets)
+            '💀': { canShoot: true, interval: 2500, bulletType: 'rapid' },    // Rapid single bullets
+            '🐛': { canShoot: false, interval: 0, bulletType: 'none' },        // No shooting
+            '🦂': { canShoot: true, interval: 3500, bulletType: 'double' },   // Double bullets
+            '🕷️': { canShoot: true, interval: 4500, bulletType: 'aimed' },   // Aimed at player
+            '🦗': { canShoot: false, interval: 0, bulletType: 'none' }         // No shooting
         };
-        return shootingPatterns[emoji] || { canShoot: false, interval: 0 };
+        return shootingPatterns[emoji] || { canShoot: false, interval: 0, bulletType: 'single' };
     }
     
     constructor(x, y, speed, gameLevel = 1) {
@@ -76,6 +76,7 @@ export class Enemy extends GameObject {
         this.canShoot = shootingPattern.canShoot;
         this.lastShootTime = Date.now();
         this.shootInterval = shootingPattern.interval;
+        this.bulletType = shootingPattern.bulletType;
     }
 
     update(deltaTime) {
@@ -183,6 +184,56 @@ export class Enemy extends GameObject {
             return true;
         }
         return false;
+    }
+    
+    getBulletPattern(playerX, playerY) {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const bullets = [];
+        
+        switch(this.bulletType) {
+            case 'single':
+                // Single bullet straight down
+                bullets.push({ x: centerX - 3, y: this.y + this.height, vx: 0, vy: 3 });
+                break;
+                
+            case 'double':
+                // Two bullets side by side
+                bullets.push({ x: centerX - 15, y: this.y + this.height, vx: 0, vy: 3 });
+                bullets.push({ x: centerX + 10, y: this.y + this.height, vx: 0, vy: 3 });
+                break;
+                
+            case 'spread':
+                // Three bullets in a spread pattern
+                bullets.push({ x: centerX - 3, y: this.y + this.height, vx: -2, vy: 3 });
+                bullets.push({ x: centerX - 3, y: this.y + this.height, vx: 0, vy: 3 });
+                bullets.push({ x: centerX - 3, y: this.y + this.height, vx: 2, vy: 3 });
+                break;
+                
+            case 'aimed':
+                // Bullet aimed at player
+                const dx = playerX - centerX;
+                const dy = playerY - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const speed = 4;
+                bullets.push({ 
+                    x: centerX - 3, 
+                    y: this.y + this.height, 
+                    vx: (dx / dist) * speed, 
+                    vy: (dy / dist) * speed 
+                });
+                break;
+                
+            case 'rapid':
+                // Single fast bullet
+                bullets.push({ x: centerX - 3, y: this.y + this.height, vx: 0, vy: 4.5 });
+                break;
+                
+            default:
+                bullets.push({ x: centerX - 3, y: this.y + this.height, vx: 0, vy: 3 });
+        }
+        
+        return bullets;
     }
 }
 
