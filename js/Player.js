@@ -100,9 +100,9 @@ export class Player extends GameObject {
             }
         }
         
-        // Spiral shot rotation
+        // Spiral shot rotation - faster rotation for visual effect
         if (this.powerUps.spiralShot) {
-            this.spiralAngle += deltaTime * 0.003;
+            this.spiralAngle += deltaTime * 0.005;
         }
         
         // Update drones

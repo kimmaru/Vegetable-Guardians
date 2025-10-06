@@ -228,65 +228,68 @@ export class Game {
             });
         }
 
-        // Laser Beam
-        if (this.player.powerUps.laserBeam) {
-            const laser = new Bullet(bulletX, bulletY, true);
-            laser.isLaser = true;
-            laser.width = 8;
-            laser.height = CONFIG.CANVAS_HEIGHT;
-            laser.vy = 0; // Laser doesn't move
-            laser.lifespan = 100; // Very short lifespan
-            this.bullets.push(laser);
-            return;
+        // Determine number of bullets based on multi-shot abilities
+        let bulletCount = 1;
+        let bulletPositions = [bulletX];
+        
+        if (this.player.powerUps.pentaShot) {
+            bulletCount = 5;
+            bulletPositions = [bulletX - 30, bulletX - 15, bulletX, bulletX + 15, bulletX + 30];
+        } else if (this.player.powerUps.quadShot) {
+            bulletCount = 4;
+            bulletPositions = [bulletX - 22, bulletX - 7, bulletX + 7, bulletX + 22];
+        } else if (this.player.powerUps.tripleShot) {
+            bulletCount = 3;
+            bulletPositions = [bulletX - 15, bulletX, bulletX + 15];
+        } else if (this.player.powerUps.doubleShot) {
+            bulletCount = 2;
+            bulletPositions = [bulletX - 10, bulletX + 10];
         }
         
-        // Homing Missile
-        if (this.player.powerUps.homingMissile) {
-            const missile = new Bullet(bulletX, bulletY, true);
-            missile.isHoming = true;
-            missile.homingStrength = 0.15;
-            this.bullets.push(missile);
-            return;
-        }
-
-        // Spiral Shot
-        if (this.player.powerUps.spiralShot) {
-            for (let i = 0; i < 8; i++) {
-                const angle = this.player.spiralAngle + (i / 8) * Math.PI * 2;
-                const bullet = new Bullet(bulletX, bulletY, true);
-                bullet.vx = Math.cos(angle) * 3;
-                bullet.vy = -5 + Math.sin(angle) * 3;
-                this.bullets.push(bullet);
+        // Fire bullets with combined abilities
+        for (let i = 0; i < bulletCount; i++) {
+            const bx = bulletPositions[i];
+            
+            // Laser Beam (can combine with multi-shot)
+            if (this.player.powerUps.laserBeam) {
+                const laser = new Bullet(bx, bulletY, true);
+                laser.isLaser = true;
+                laser.width = 8;
+                laser.height = CONFIG.CANVAS_HEIGHT;
+                laser.vy = 0;
+                laser.lifespan = 100;
+                this.bullets.push(laser);
             }
-            return;
+            
+            // Homing Missile (can combine with multi-shot)
+            if (this.player.powerUps.homingMissile) {
+                const missile = new Bullet(bx, bulletY, true);
+                missile.isHoming = true;
+                missile.homingStrength = 0.15;
+                this.bullets.push(missile);
+            }
+            
+            // Spiral Shot (can combine with multi-shot)
+            if (this.player.powerUps.spiralShot) {
+                const numBullets = 3;
+                for (let j = 0; j < numBullets; j++) {
+                    const angle = this.player.spiralAngle + (j / numBullets) * Math.PI * 2;
+                    const bullet = new Bullet(bx, bulletY, true);
+                    const speed = CONFIG.BULLET.SPEED;
+                    bullet.vx = Math.cos(angle) * speed * 0.4;
+                    bullet.vy = -speed * 0.9 + Math.sin(angle) * speed * 0.4;
+                    this.bullets.push(bullet);
+                }
+            }
+            
+            // Normal shot (if no special shot type)
+            if (!this.player.powerUps.laserBeam && 
+                !this.player.powerUps.homingMissile && 
+                !this.player.powerUps.spiralShot) {
+                this.bullets.push(new Bullet(bx, bulletY, true));
+            }
         }
-
-        if (this.player.powerUps.pentaShot) {
-            // Shoot five bullets
-            this.bullets.push(new Bullet(bulletX - 30, bulletY, true));
-            this.bullets.push(new Bullet(bulletX - 15, bulletY, true));
-            this.bullets.push(new Bullet(bulletX, bulletY, true));
-            this.bullets.push(new Bullet(bulletX + 15, bulletY, true));
-            this.bullets.push(new Bullet(bulletX + 30, bulletY, true));
-        } else if (this.player.powerUps.quadShot) {
-            // Shoot four bullets
-            this.bullets.push(new Bullet(bulletX - 22, bulletY, true));
-            this.bullets.push(new Bullet(bulletX - 7, bulletY, true));
-            this.bullets.push(new Bullet(bulletX + 7, bulletY, true));
-            this.bullets.push(new Bullet(bulletX + 22, bulletY, true));
-        } else if (this.player.powerUps.tripleShot) {
-            // Shoot three bullets
-            this.bullets.push(new Bullet(bulletX - 15, bulletY, true));
-            this.bullets.push(new Bullet(bulletX, bulletY, true));
-            this.bullets.push(new Bullet(bulletX + 15, bulletY, true));
-        } else if (this.player.powerUps.doubleShot) {
-            // Shoot two bullets
-            this.bullets.push(new Bullet(bulletX - 10, bulletY, true));
-            this.bullets.push(new Bullet(bulletX + 10, bulletY, true));
-        } else {
-            // Shoot one bullet
-            this.bullets.push(new Bullet(bulletX, bulletY, true));
-        }
+        
     }
 
     startWave(waveNumber) {

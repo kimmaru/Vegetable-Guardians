@@ -8,9 +8,9 @@ export const CONFIG = {
     PLAYER: {
         WIDTH: 50,
         HEIGHT: 50,
-        SPEED: 3.9, // Increased by 30% (3 * 1.3)
+        SPEED: 3.9, // Player speed // Increased by 30% (3 * 1.3)
         MAX_HEALTH: 100,
-        SHOOT_COOLDOWN: 808, // Decreased by 30% for faster firing (1050 / 1.3)
+        SHOOT_COOLDOWN: 970, // Increased by 20% for slower firing (808 * 1.2)
         COLOR: '#4CAF50',
     },
     
@@ -18,7 +18,7 @@ export const CONFIG = {
     ENEMY: {
         WIDTH: 60, // Increased from 40 to 60 (50% larger)
         HEIGHT: 60, // Increased from 40 to 60 (50% larger)
-        BASE_SPEED: 0.65, // Increased by 30% (0.5 * 1.3)
+        BASE_SPEED: 0.78, // Increased by 20% from 0.65 (0.65 * 1.2)
         BASE_HEALTH: 25, // Reduced from 50 to 25 (half)
         SPAWN_INTERVAL: 2308, // Decreased by 30% (3000 / 1.3)
         MIN_SPAWN_INTERVAL: 923, // Decreased by 30% (1200 / 1.3)

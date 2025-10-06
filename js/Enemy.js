@@ -3,6 +3,36 @@ import { CONFIG, EMOJIS } from './config.js';
 import { randomChoice, randomInt } from './utils.js';
 
 export class Enemy extends GameObject {
+    getMovementTypeByEmoji(emoji) {
+        // Map each emoji to a specific movement pattern
+        const emojiPatterns = {
+            '👾': 0,  // Straight down
+            '👻': 1,  // Sine wave
+            '🦠': 2,  // Zigzag
+            '💀': 3,  // Circular
+            '🐛': 4,  // Diagonal swooping
+            '🦂': 5,  // Stop and dash
+            '🕷️': 6, // Wave pattern with drift
+            '🦗': 1   // Sine wave (alternative)
+        };
+        return emojiPatterns[emoji] || 0;
+    }
+    
+    getShootingPatternByEmoji(emoji) {
+        // Map each emoji to shooting ability and pattern
+        const shootingPatterns = {
+            '👾': { canShoot: true, interval: 3000 },   // Fast shooter
+            '👻': { canShoot: false, interval: 0 },      // No shooting
+            '🦠': { canShoot: true, interval: 4000 },   // Medium shooter
+            '💀': { canShoot: true, interval: 2500 },   // Very fast shooter
+            '🐛': { canShoot: false, interval: 0 },      // No shooting
+            '🦂': { canShoot: true, interval: 3500 },   // Medium-fast shooter
+            '🕷️': { canShoot: true, interval: 4500 },  // Slow shooter
+            '🦗': { canShoot: false, interval: 0 }       // No shooting
+        };
+        return shootingPatterns[emoji] || { canShoot: false, interval: 0 };
+    }
+    
     constructor(x, y, speed, gameLevel = 1) {
         super(x, y, CONFIG.ENEMY.WIDTH, CONFIG.ENEMY.HEIGHT);
         // Health increases with game level
@@ -27,8 +57,8 @@ export class Enemy extends GameObject {
         this.emoji = randomChoice(enemyPool);
         this.points = CONFIG.ENEMY.POINTS;
         
-        // Movement pattern - more variety
-        this.movementType = randomInt(0, 6);
+        // Movement pattern based on emoji type (consistent for same emoji)
+        this.movementType = this.getMovementTypeByEmoji(this.emoji);
         this.time = 0;
         this.amplitude = randomInt(30, 80);
         this.frequency = randomInt(1, 4) / 1000;
@@ -41,10 +71,11 @@ export class Enemy extends GameObject {
         this.dashSpeed = 0;
         this.isDashing = false;
         
-        // Shooting
-        this.canShoot = Math.random() < 0.3; // 30% of enemies can shoot
+        // Shooting based on emoji type
+        const shootingPattern = this.getShootingPatternByEmoji(this.emoji);
+        this.canShoot = shootingPattern.canShoot;
         this.lastShootTime = Date.now();
-        this.shootInterval = randomInt(2000, 4000);
+        this.shootInterval = shootingPattern.interval;
     }
 
     update(deltaTime) {
