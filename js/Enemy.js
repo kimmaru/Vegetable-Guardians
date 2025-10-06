@@ -10,7 +10,21 @@ export class Enemy extends GameObject {
         this.health = this.maxHealth;
         this.speed = speed;
         this.vy = this.speed;
-        this.emoji = randomChoice(EMOJIS.ENEMIES);
+        
+        // Select emoji based on wave/level
+        let enemyPool;
+        if (gameLevel <= 1) {
+            enemyPool = EMOJIS.ENEMIES_WAVE_1;
+        } else if (gameLevel <= 3) {
+            enemyPool = EMOJIS.ENEMIES_WAVE_2;
+        } else if (gameLevel <= 5) {
+            enemyPool = EMOJIS.ENEMIES_WAVE_3;
+        } else if (gameLevel <= 7) {
+            enemyPool = EMOJIS.ENEMIES_WAVE_4;
+        } else {
+            enemyPool = EMOJIS.ENEMIES_WAVE_5;
+        }
+        this.emoji = randomChoice(enemyPool);
         this.points = CONFIG.ENEMY.POINTS;
         
         // Movement pattern

@@ -31,7 +31,7 @@ export const CONFIG = {
         HEIGHT: 100,
         SPEED: 0.65, // Increased by 30% (0.5 * 1.3)
         BASE_HEALTH: 500,
-        SPAWN_SCORE: 1000, // Boss appears every 1000 points
+        SPAWN_SCORE: 2000, // Boss appears every 2000 points (increased from 1000)
         POINTS: 100,
     },
     
@@ -71,7 +71,7 @@ export const CONFIG = {
     // Level progression
     LEVELS: {
         SCORE_MULTIPLIER: 1.2,
-        ENEMY_SPEED_INCREASE: 0.15, // Reduced from 0.3 to 0.15 for more gradual difficulty increase
+        ENEMY_SPEED_INCREASE: 0.03, // Reduced from 0.15 to 0.03 for much slower speed increase
         SPAWN_RATE_DECREASE: 150, // Reduced from 200 for more gradual spawn rate increase
     },
     
@@ -87,7 +87,12 @@ export const CONFIG = {
 // Emoji sets for game objects
 export const EMOJIS = {
     PLAYER: ['🥕', '🌽', '🥬', '🥦', '🥒'],
-    ENEMIES: ['👾', '👻', '🦠', '💀', '🐛'],
+    // Wave-based enemy progression
+    ENEMIES_WAVE_1: ['👾'],  // Wave 1: Only aliens
+    ENEMIES_WAVE_2: ['👾', '👻'],  // Wave 2: Aliens + ghosts
+    ENEMIES_WAVE_3: ['👾', '👻', '🦠'],  // Wave 3: + viruses
+    ENEMIES_WAVE_4: ['👾', '👻', '🦠', '💀'],  // Wave 4: + skulls
+    ENEMIES_WAVE_5: ['👾', '👻', '🦠', '💀', '🐛', '🦂', '🕷️', '🦗'],  // Wave 5+: All enemies
     BOSSES: ['👹', '🐉', '🦖', '👺', '😈', '🦑'],
     EXPLOSIONS: ['💥', '✨', '💫', '⭐', '🌟'],
 };

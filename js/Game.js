@@ -495,13 +495,14 @@ export class Game {
                 this.bullets.push(new Bullet(bulletX, bulletY, false));
             }
 
-            // Remove if off screen or destroyed
-            if (enemy.isOffScreen(CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT) || !enemy.active) {
-                // Check if player let enemy pass
-                if (enemy.y > CONFIG.CANVAS_HEIGHT && enemy.active) {
-                    this.player.takeDamage(5);
-                    this.updateUI();
-                }
+            // Respawn at top if enemy reaches bottom (no damage)
+            if (enemy.y > CONFIG.CANVAS_HEIGHT && enemy.active) {
+                enemy.y = -enemy.height;
+                enemy.x = randomInt(0, CONFIG.CANVAS_WIDTH - enemy.width);
+            }
+            
+            // Remove only if destroyed
+            if (!enemy.active) {
                 this.enemies.splice(i, 1);
             }
         }
