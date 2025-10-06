@@ -198,6 +198,67 @@ body {
     box-shadow: 0 0 10px rgba(249, 65, 68, 0.5);
 }
 
+/* Experience Bar */
+.exp-bar-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.exp-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.exp-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4ECDC4 0%, #95E1D3 100%);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.8);
+}
+
+/* Ability Selection */
+.ability-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.ability-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.ability-button:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.6);
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.ability-name {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.ability-description {
+    font-size: 0.95em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
 /* Overlays */
 .overlay {
     position: absolute;
@@ -317,16 +378,30 @@ body {
     }
     
     .ui-top {
-        padding: 15px;
+        padding: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .ui-item {
+        flex: 0 0 50%;
+        margin-bottom: 5px;
+    }
+    
+    .ui-label {
+        font-size: 0.8em;
     }
     
     .ui-value {
-        font-size: 1.5em;
+        font-size: 1.3em;
     }
     
     .health-bar {
-        width: 120px;
-        height: 18px;
+        width: 100px;
+        height: 16px;
+    }
+    
+    .exp-bar {
+        height: 6px;
     }
     
     .overlay-content {
@@ -347,6 +422,18 @@ body {
     
     .stats p {
         font-size: 1.3em;
+    }
+    
+    .ability-button {
+        padding: 15px;
+    }
+    
+    .ability-name {
+        font-size: 1.1em;
+    }
+    
+    .ability-description {
+        font-size: 0.85em;
     }
 }
 

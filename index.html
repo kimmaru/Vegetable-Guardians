@@ -43,14 +43,23 @@
                         <span id="score" class="ui-value">0</span>
                     </div>
                     <div class="ui-item">
-                        <span class="ui-label">레벨</span>
+                        <span class="ui-label">웨이브</span>
                         <span id="level" class="ui-value">1</span>
+                    </div>
+                    <div class="ui-item">
+                        <span class="ui-label">레벨</span>
+                        <span id="player-level" class="ui-value">1</span>
                     </div>
                     <div class="ui-item">
                         <span class="ui-label">체력</span>
                         <div id="health-bar" class="health-bar">
                             <div id="health-fill" class="health-fill"></div>
                         </div>
+                    </div>
+                </div>
+                <div class="exp-bar-container">
+                    <div id="exp-bar" class="exp-bar">
+                        <div id="exp-fill" class="exp-fill"></div>
                     </div>
                 </div>
             </div>
@@ -60,6 +69,15 @@
                     <p id="pause-instruction">P 키를 눌러 재개하세요</p>
                     <button id="resume-button" class="menu-button">재개</button>
                     <button id="main-menu-button" class="menu-button">메인 메뉴</button>
+                </div>
+            </div>
+            <div id="ability-overlay" class="overlay hidden">
+                <div class="overlay-content">
+                    <h2>🌟 레벨 업! 🌟</h2>
+                    <p>특수 능력을 선택하세요</p>
+                    <div id="ability-choices" class="ability-choices">
+                        <!-- Ability buttons will be added here dynamically -->
+                    </div>
                 </div>
             </div>
         </div>

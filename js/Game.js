@@ -18,6 +18,11 @@ export class Game {
         this.score = 0;
         this.level = 1;
         this.isPaused = false;
+        
+        // Experience system
+        this.experience = 0;
+        this.experienceToNextLevel = 100;
+        this.playerLevel = 1;
 
         // Game objects
         this.player = null;
@@ -76,6 +81,9 @@ export class Game {
         // Reset game
         this.score = 0;
         this.level = 1;
+        this.experience = 0;
+        this.experienceToNextLevel = 100;
+        this.playerLevel = 1;
         this.enemies = [];
         this.bullets = [];
         this.powerUps = [];
@@ -244,13 +252,9 @@ export class Game {
         // Handle player input
         this.handlePlayerMovement();
         
-        // Auto shooting
-        if (this.autoShoot && this.player && this.player.canShoot()) {
-            const autoShootInterval = this.player.powerUps.rapidFire ? 100 : 250;
-            if (currentTime - this.lastAutoShoot >= autoShootInterval) {
-                this.shoot();
-                this.lastAutoShoot = currentTime;
-            }
+        // Auto shooting - simplified to just shoot when ready
+        if (this.autoShoot && this.player) {
+            this.shoot();
         }
 
         // Update player
@@ -362,13 +366,11 @@ export class Game {
             const dx = targetX - playerCenterX;
             const distance = Math.abs(dx);
             
-            if (distance > 10) { // Dead zone to prevent jittery movement
-                const moveSpeed = this.player.speed * 1.5; // Smooth touch movement
-                if (dx > 0) {
-                    this.player.vx = Math.min(moveSpeed, distance / 5); // Slow down as we approach target
-                } else {
-                    this.player.vx = Math.max(-moveSpeed, dx / 5);
-                }
+            // Direct position update for immediate response
+            if (distance > 5) { // Small dead zone
+                // Move player directly to touch position (with bounds checking)
+                const newX = targetX - this.player.width / 2;
+                this.player.x = Math.max(0, Math.min(newX, CONFIG.CANVAS_WIDTH - this.player.width));
             }
         }
     }
@@ -390,6 +392,9 @@ export class Game {
                     if (destroyed) {
                         // Add score
                         this.addScore(enemy.points);
+                        
+                        // Add experience
+                        this.addExperience(10);
                         
                         // Create explosion
                         this.effects.push(new ExplosionEffect(
@@ -502,6 +507,34 @@ export class Game {
         this.checkLevelUp();
     }
 
+    addExperience(amount) {
+        this.experience += amount;
+        this.updateUI();
+        
+        // Check for level up
+        if (this.experience >= this.experienceToNextLevel) {
+            this.levelUp();
+        }
+    }
+
+    levelUp() {
+        this.playerLevel++;
+        this.experience -= this.experienceToNextLevel;
+        this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.5);
+        
+        // Pause game and show ability selection
+        this.isPaused = true;
+        this.showAbilitySelection();
+        
+        // Show level up message
+        this.effects.push(new TextEffect(
+            CONFIG.CANVAS_WIDTH / 2,
+            CONFIG.CANVAS_HEIGHT / 2,
+            `레벨 업! Lv.${this.playerLevel}`,
+            '#FFD700'
+        ));
+    }
+
     checkLevelUp() {
         const newLevel = Math.floor(this.score / 500) + 1;
         if (newLevel > this.level) {
@@ -515,15 +548,104 @@ export class Game {
             this.effects.push(new TextEffect(
                 CONFIG.CANVAS_WIDTH / 2,
                 CONFIG.CANVAS_HEIGHT / 2,
-                `레벨 ${this.level}!`,
+                `웨이브 ${this.level}!`,
                 '#4ECDC4'
             ));
         }
     }
 
+    showAbilitySelection() {
+        const abilityOverlay = document.getElementById('ability-overlay');
+        const abilityChoices = document.getElementById('ability-choices');
+        
+        // Define available abilities
+        const abilities = [
+            { 
+                id: 'maxHealth', 
+                name: '💪 최대 체력 증가', 
+                description: '최대 체력 +20',
+                effect: () => {
+                    this.player.maxHealth += 20;
+                    this.player.health = Math.min(this.player.health + 20, this.player.maxHealth);
+                }
+            },
+            { 
+                id: 'damage', 
+                name: '⚔️ 공격력 증가', 
+                description: '총알 공격력 +10',
+                effect: () => {
+                    CONFIG.BULLET.DAMAGE += 10;
+                }
+            },
+            { 
+                id: 'speed', 
+                name: '🏃 이동 속도 증가', 
+                description: '이동 속도 +1',
+                effect: () => {
+                    this.player.speed += 1;
+                }
+            },
+            { 
+                id: 'shootSpeed', 
+                name: '⚡ 발사 속도 증가', 
+                description: '발사 쿨다운 -50ms',
+                effect: () => {
+                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown - 50);
+                }
+            }
+        ];
+        
+        // Randomly select 3 abilities
+        const selectedAbilities = [];
+        const availableAbilities = [...abilities];
+        for (let i = 0; i < Math.min(3, availableAbilities.length); i++) {
+            const index = Math.floor(Math.random() * availableAbilities.length);
+            selectedAbilities.push(availableAbilities[index]);
+            availableAbilities.splice(index, 1);
+        }
+        
+        // Create ability buttons
+        abilityChoices.innerHTML = '';
+        selectedAbilities.forEach(ability => {
+            const button = document.createElement('button');
+            button.className = 'ability-button';
+            button.innerHTML = `
+                <div class="ability-name">${ability.name}</div>
+                <div class="ability-description">${ability.description}</div>
+            `;
+            button.addEventListener('click', () => {
+                ability.effect();
+                this.hideAbilitySelection();
+                this.isPaused = false;
+                this.updateUI();
+            });
+            abilityChoices.appendChild(button);
+        });
+        
+        abilityOverlay.classList.remove('hidden');
+    }
+
+    hideAbilitySelection() {
+        const abilityOverlay = document.getElementById('ability-overlay');
+        abilityOverlay.classList.add('hidden');
+    }
+
     updateUI() {
         document.getElementById('score').textContent = this.score;
         document.getElementById('level').textContent = this.level;
+        
+        // Update experience bar
+        const expPercent = (this.experience / this.experienceToNextLevel) * 100;
+        const expFill = document.getElementById('exp-fill');
+        if (expFill) {
+            expFill.style.width = `${expPercent}%`;
+        }
+        
+        // Update player level display
+        const playerLevelEl = document.getElementById('player-level');
+        if (playerLevelEl) {
+            playerLevelEl.textContent = this.playerLevel;
+        }
         
         if (this.player) {
             const healthPercent = this.player.getHealthPercentage();
