@@ -3,7 +3,6 @@ import { Player } from './Player.js';
 import { Enemy } from './Enemy.js';
 import { Boss } from './Boss.js';
 import { Bullet } from './Bullet.js';
-import { PowerUp } from './PowerUp.js';
 import { ExplosionEffect, TextEffect } from './Particle.js';
 import { checkCollision, randomInt, randomChoice, shakeScreen } from './utils.js';
 
@@ -30,7 +29,6 @@ export class Game {
         this.enemies = [];
         this.boss = null;
         this.bullets = [];
-        this.powerUps = [];
         this.effects = [];
         
         // Boss tracking
@@ -93,7 +91,6 @@ export class Game {
         this.enemies = [];
         this.boss = null;
         this.bullets = [];
-        this.powerUps = [];
         this.effects = [];
         this.lastEnemySpawn = 0;
         this.enemySpawnInterval = CONFIG.ENEMY.SPAWN_INTERVAL;
@@ -389,14 +386,7 @@ export class Game {
         ));
     }
 
-    spawnPowerUp(x, y) {
-        if (Math.random() > CONFIG.POWERUP.SPAWN_CHANCE) return;
-
-        const types = Object.keys(CONFIG.POWERUP.TYPES);
-        const type = randomChoice(types);
-        
-        this.powerUps.push(new PowerUp(x, y, type));
-    }
+    // PowerUp system removed for gameplay balance
 
     createExplosion(x, y) {
         // Damage nearby enemies
@@ -527,16 +517,7 @@ export class Game {
             }
         }
 
-        // Update and draw power-ups
-        for (let i = this.powerUps.length - 1; i >= 0; i--) {
-            const powerUp = this.powerUps[i];
-            powerUp.update(deltaTime);
-            powerUp.draw(this.ctx);
-
-            if (!powerUp.active) {
-                this.powerUps.splice(i, 1);
-            }
-        }
+        // PowerUp system removed
 
         // Update and draw effects
         for (let i = this.effects.length - 1; i >= 0; i--) {
@@ -706,8 +687,7 @@ export class Game {
                             this.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
                         }
                         
-                        // Spawn power-up
-                        this.spawnPowerUp(enemy.x, enemy.y);
+                        // PowerUp system removed
                     }
                     
                     if (!this.player || !this.player.powerUps.piercing) {
@@ -734,24 +714,7 @@ export class Game {
                 }
             }
 
-            // Player vs power-ups
-            for (let i = this.powerUps.length - 1; i >= 0; i--) {
-                const powerUp = this.powerUps[i];
-                
-                if (checkCollision(this.player, powerUp)) {
-                    powerUp.applyEffect(this.player);
-                    powerUp.destroy();
-                    this.updateUI();
-                    
-                    // Show power-up text
-                    this.effects.push(new TextEffect(
-                        powerUp.x + powerUp.width / 2,
-                        powerUp.y,
-                        powerUp.config.emoji,
-                        powerUp.config.color
-                    ));
-                }
-            }
+            // PowerUp system removed
 
             // Player vs enemies (collision)
             for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -969,15 +932,6 @@ export class Game {
                 }
             },
             {
-                id: 'reflectShield',
-                tier: 'S',
-                name: '🛡️ 반사 실드',
-                description: '적 탄환 30% 확률로 반사',
-                effect: () => {
-                    this.player.powerUps.reflectShield = true;
-                }
-            },
-            {
                 id: 'spiralShot',
                 tier: 'S',
                 name: '🌀 나선 탄환',
@@ -1051,15 +1005,6 @@ export class Game {
                     this.player.powerUps.toxicCloud = true;
                 }
             },
-            {
-                id: 'shield',
-                tier: 'A',
-                name: '🛡️ 보호막',
-                description: '데미지 50% 감소',
-                effect: () => {
-                    this.player.powerUps.shield = true;
-                }
-            },
             // B Tier (20% chance)
             { 
                 id: 'damageUp2', 
@@ -1107,24 +1052,6 @@ export class Game {
                 description: '돌아오는 부메랑 발사',
                 effect: () => {
                     this.player.powerUps.boomerang = true;
-                }
-            },
-            {
-                id: 'vampire',
-                tier: 'B',
-                name: '🩸 흡혈',
-                description: '데미지의 20%만큼 체력 회복',
-                effect: () => {
-                    this.player.powerUps.vampire = true;
-                }
-            },
-            {
-                id: 'thorns',
-                tier: 'B',
-                name: '🌵 가시',
-                description: '피격 시 적에게 50% 반사',
-                effect: () => {
-                    this.player.powerUps.thorns = true;
                 }
             },
             {
@@ -1192,36 +1119,17 @@ export class Game {
                     this.player.shootCooldown = Math.max(100, this.player.shootCooldown * 0.85);
                 }
             },
-            { 
-                id: 'regen', 
-                tier: 'D',
-                name: '❤️‍🩹 체력 재생', 
-                description: '초당 체력 +2',
-                effect: () => {
-                    this.player.powerUps.regen = true;
-                    this.player.regenAmount = 2;
-                }
-            },
-            { 
-                id: 'magnetism', 
-                tier: 'D',
-                name: '🧲 자석', 
-                description: '파워업 흡수 범위 증가',
-                effect: () => {
-                    this.player.powerUps.magnetism = true;
-                }
-            }
         ];
         
-        // Tier weights for rarity
+        // Tier weights for rarity - balanced for excitement
         const tierWeights = {
-            'SSS': 0.5,
-            'SS': 2,
-            'S': 5,
-            'A': 10,
-            'B': 20,
-            'C': 30,
-            'D': 32.5
+            'SSS': 8,    // Increased from 0.5% to 8%
+            'SS': 12,    // Increased from 2% to 12%
+            'S': 18,     // Increased from 5% to 18%
+            'A': 22,     // Increased from 10% to 22%
+            'B': 20,     // Same 20%
+            'C': 15,     // Decreased from 30% to 15%
+            'D': 5       // Decreased from 32.5% to 5%
         };
         
         // Select 3 abilities based on weighted random
