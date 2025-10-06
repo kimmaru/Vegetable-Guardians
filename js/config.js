@@ -18,11 +18,21 @@ export const CONFIG = {
     ENEMY: {
         WIDTH: 40,
         HEIGHT: 40,
-        BASE_SPEED: 0.6, // Reduced from 1.2 to 0.6 (50% slower)
+        BASE_SPEED: 0.3, // Reduced from 0.6 to 0.3 (50% slower again)
         BASE_HEALTH: 50, // Increased from 25 to 50 (2x health)
         SPAWN_INTERVAL: 3000, // Increased from 2000 to 3000ms
         MIN_SPAWN_INTERVAL: 1200, // Increased from 800 to 1200ms
         POINTS: 10,
+    },
+    
+    // Boss settings
+    BOSS: {
+        WIDTH: 100,
+        HEIGHT: 100,
+        SPEED: 0.5,
+        BASE_HEALTH: 500,
+        SPAWN_SCORE: 1000, // Boss appears every 1000 points
+        POINTS: 100,
     },
     
     // Bullet settings
@@ -78,6 +88,7 @@ export const CONFIG = {
 export const EMOJIS = {
     PLAYER: ['🥕', '🌽', '🥬', '🥦', '🥒'],
     ENEMIES: ['👾', '👻', '🦠', '💀', '🐛'],
+    BOSSES: ['👹', '🐉', '🦖', '👺', '😈', '🦑'],
     EXPLOSIONS: ['💥', '✨', '💫', '⭐', '🌟'],
 };
 

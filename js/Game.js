@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { Player } from './Player.js';
 import { Enemy } from './Enemy.js';
+import { Boss } from './Boss.js';
 import { Bullet } from './Bullet.js';
 import { PowerUp } from './PowerUp.js';
 import { ExplosionEffect, TextEffect } from './Particle.js';
@@ -27,9 +28,14 @@ export class Game {
         // Game objects
         this.player = null;
         this.enemies = [];
+        this.boss = null;
         this.bullets = [];
         this.powerUps = [];
         this.effects = [];
+        
+        // Boss tracking
+        this.lastBossScore = 0;
+        this.bossActive = false;
 
         // Spawning
         this.lastEnemySpawn = 0;
@@ -85,11 +91,14 @@ export class Game {
         this.experienceToNextLevel = 100;
         this.playerLevel = 1;
         this.enemies = [];
+        this.boss = null;
         this.bullets = [];
         this.powerUps = [];
         this.effects = [];
         this.lastEnemySpawn = 0;
         this.enemySpawnInterval = CONFIG.ENEMY.SPAWN_INTERVAL;
+        this.lastBossScore = 0;
+        this.bossActive = false;
 
         // Create player
         const startX = CONFIG.CANVAS_WIDTH / 2 - CONFIG.PLAYER.WIDTH / 2;
@@ -255,6 +264,127 @@ export class Game {
         }
     }
 
+    spawnBoss() {
+        if (this.bossActive || this.boss) return;
+        
+        const x = CONFIG.CANVAS_WIDTH / 2 - CONFIG.BOSS.WIDTH / 2;
+        const y = -CONFIG.BOSS.HEIGHT;
+        
+        this.boss = new Boss(x, y, this.level);
+        this.bossActive = true;
+        this.lastBossScore = this.score;
+        
+        // Clear existing enemies
+        this.enemies = [];
+        
+        // Show boss warning
+        this.effects.push(new TextEffect(
+            CONFIG.CANVAS_WIDTH / 2,
+            CONFIG.CANVAS_HEIGHT / 2,
+            '⚠️ BOSS INCOMING! ⚠️',
+            '#FF0000'
+        ));
+        
+        shakeScreen(15, 500);
+    }
+
+    bossDefeated() {
+        if (!this.boss) return;
+        
+        const bossX = this.boss.x + this.boss.width / 2;
+        const bossY = this.boss.y + this.boss.height / 2;
+        
+        // Add score
+        this.addScore(this.boss.points);
+        
+        // Add lots of XP
+        this.addExperience(100);
+        
+        // Create massive explosion
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                this.effects.push(new ExplosionEffect(
+                    bossX + randomInt(-50, 50),
+                    bossY + randomInt(-50, 50),
+                    '#FFD700'
+                ));
+            }, i * 100);
+        }
+        
+        // Show victory message
+        this.effects.push(new TextEffect(
+            CONFIG.CANVAS_WIDTH / 2,
+            CONFIG.CANVAS_HEIGHT / 2,
+            '🎉 BOSS DEFEATED! 🎉',
+            '#FFD700'
+        ));
+        
+        // Grant special boss reward
+        this.grantBossReward();
+        
+        shakeScreen(20, 1000);
+        this.bossActive = false;
+    }
+
+    grantBossReward() {
+        if (!this.player) return;
+        
+        // Boss rewards - powerful unique abilities
+        const bossRewards = [
+            {
+                name: '👑 Royal Power',
+                effect: () => {
+                    this.player.maxHealth += 50;
+                    this.player.health = this.player.maxHealth;
+                    CONFIG.BULLET.DAMAGE += 30;
+                }
+            },
+            {
+                name: '⚡ Lightning Storm',
+                effect: () => {
+                    this.player.powerUps.lightningStorm = true;
+                    this.player.shootCooldown = Math.max(50, this.player.shootCooldown * 0.5);
+                }
+            },
+            {
+                name: '🌪️ Tornado',
+                effect: () => {
+                    this.player.powerUps.tornado = true;
+                }
+            },
+            {
+                name: '🔱 Trident',
+                effect: () => {
+                    this.player.powerUps.trident = true;
+                }
+            },
+            {
+                name: '💫 Star Guardian',
+                effect: () => {
+                    this.player.powerUps.starGuardian = true;
+                    this.player.starCount = 3;
+                }
+            },
+            {
+                name: '🎆 Fireworks',
+                effect: () => {
+                    this.player.powerUps.fireworks = true;
+                }
+            }
+        ];
+        
+        const reward = randomChoice(bossRewards);
+        reward.effect();
+        
+        // Show reward notification
+        this.effects.push(new TextEffect(
+            CONFIG.CANVAS_WIDTH / 2,
+            CONFIG.CANVAS_HEIGHT / 2 + 50,
+            `획득: ${reward.name}`,
+            '#FF00FF'
+        ));
+    }
+
     spawnPowerUp(x, y) {
         if (Math.random() > CONFIG.POWERUP.SPAWN_CHANCE) return;
 
@@ -319,10 +449,38 @@ export class Game {
             this.player.draw(this.ctx);
         }
 
-        // Spawn enemies
-        if (currentTime - this.lastEnemySpawn > this.enemySpawnInterval) {
+        // Check for boss spawn
+        if (!this.bossActive && this.score >= this.lastBossScore + CONFIG.BOSS.SPAWN_SCORE) {
+            this.spawnBoss();
+        }
+        
+        // Spawn enemies (not when boss is active)
+        if (!this.bossActive && currentTime - this.lastEnemySpawn > this.enemySpawnInterval) {
             this.spawnEnemy();
             this.lastEnemySpawn = currentTime;
+        }
+        
+        // Update and draw boss
+        if (this.boss) {
+            this.boss.update(deltaTime);
+            this.boss.draw(this.ctx);
+            
+            // Boss shooting
+            if (this.boss.shouldShoot()) {
+                const bulletX = this.boss.x + this.boss.width / 2 - CONFIG.ENEMY_BULLET.WIDTH / 2;
+                const bulletY = this.boss.y + this.boss.height;
+                
+                // Boss shoots 3 bullets
+                this.bullets.push(new Bullet(bulletX - 20, bulletY, false));
+                this.bullets.push(new Bullet(bulletX, bulletY, false));
+                this.bullets.push(new Bullet(bulletX + 20, bulletY, false));
+            }
+            
+            // Remove if destroyed
+            if (!this.boss.active) {
+                this.bossActive = false;
+                this.boss = null;
+            }
         }
 
         // Update and draw enemies
@@ -432,6 +590,47 @@ export class Game {
     }
 
     checkCollisions() {
+        // Player bullets vs boss
+        if (this.boss) {
+            for (let i = this.bullets.length - 1; i >= 0; i--) {
+                const bullet = this.bullets[i];
+                if (!bullet.isPlayer) continue;
+                
+                if (checkCollision(bullet, this.boss)) {
+                    // Calculate damage
+                    let damage = bullet.damage;
+                    let isCrit = false;
+                    if (this.player && this.player.powerUps.criticalHit && Math.random() < (this.player.critChance || 0.2)) {
+                        damage *= (this.player.critMultiplier || 2);
+                        isCrit = true;
+                    }
+                    
+                    const destroyed = this.boss.takeDamage(damage);
+                    
+                    // Show damage
+                    this.effects.push(new TextEffect(
+                        this.boss.x + this.boss.width / 2,
+                        this.boss.y + 20,
+                        isCrit ? `${damage}!` : `${damage}`,
+                        isCrit ? '#FF6B00' : '#FFFFFF'
+                    ));
+                    
+                    if (!this.player || !this.player.powerUps.piercing) {
+                        bullet.destroy();
+                    }
+                    
+                    if (destroyed) {
+                        // Boss defeated!
+                        this.bossDefeated();
+                    }
+                    
+                    if (!this.player || !this.player.powerUps.piercing) {
+                        break;
+                    }
+                }
+            }
+        }
+        
         // Player bullets vs enemies
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
