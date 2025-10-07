@@ -385,18 +385,20 @@ export class Game {
         this.level = waveNumber;
         this.waveInProgress = true;
         
-        // Calculate total enemies for this wave (increases with wave number)
-        this.waveEnemiesTotal = 10 + (waveNumber - 1) * 5; // 10, 15, 20, 25...
-        this.waveEnemiesSpawned = 0;
-        this.waveEnemiesRemaining = this.waveEnemiesTotal;
-        
-        // Check if this is a boss wave (every 5 waves)
-        if (waveNumber % 5 === 0 && waveNumber > this.lastBossWave) {
+        // Check if this is a boss wave (every 5 waves, and not same as last boss wave)
+        if (waveNumber % 5 === 0 && waveNumber !== this.lastBossWave) {
             this.waveEnemiesTotal = 0;
             this.waveEnemiesRemaining = 0;
             this.waveEnemiesSpawned = 0;
             this.spawnBoss();
+        } else {
+            // Calculate total enemies for normal wave
+            this.waveEnemiesTotal = 10 + (waveNumber - 1) * 5; // 10, 15, 20, 25...
+            this.waveEnemiesSpawned = 0;
+            this.waveEnemiesRemaining = this.waveEnemiesTotal;
         }
+        
+        this.updateUI();
     }
 
     spawnEnemy() {
@@ -466,20 +468,17 @@ export class Game {
             '#FFD700'
         ));
         
-        // Grant special boss reward
-        this.grantBossReward();
-        
-        shakeScreen(20, 1000);
-        
-        // Reset boss state and start next wave
+        // Reset boss state
         this.bossActive = false;
         this.boss = null;
         this.lastBossWave = this.level;
         
-        // Start next wave after a delay
-        setTimeout(() => {
-            this.startWave(this.level + 1);
-        }, 3000);
+        shakeScreen(20, 1000);
+        
+        // Grant special boss reward (will pause game and show selection)
+        this.grantBossReward();
+        
+        // Wave will start after reward is selected (handled in showBossRewardSelection)
     }
 
     grantBossReward() {
@@ -607,11 +606,21 @@ export class Game {
                         `획득: ${reward.name}`,
                         '#FF00FF'
                     ));
+                    
+                    // Start next wave after reward selection
+                    setTimeout(() => {
+                        this.startWave(this.level + 1);
+                    }, 2000);
                 } catch (error) {
                     console.error('Boss reward error:', error);
                     this.hideAbilitySelection();
                     this.isPaused = false;
                     this.updateUI();
+                    
+                    // Start wave even if error
+                    setTimeout(() => {
+                        this.startWave(this.level + 1);
+                    }, 2000);
                 }
             });
             abilityChoices.appendChild(button);
@@ -1229,6 +1238,8 @@ export class Game {
                     
                     // Chain Lightning - jumps to nearby enemies
                     if (this.player && this.player.powerUps.chainLightning) {
+                        this.lightningHitEnemies = new Set(); // Reset for each new chain
+                        this.lightningHitEnemies.add(enemy); // Mark first hit
                         this.triggerChainLightning(enemy, 3, 200); // Jump up to 3 times, 200px range
                     }
                     
