@@ -583,10 +583,12 @@ export class Game {
         
         // Create reward buttons
         abilityChoices.innerHTML = '';
-        selectedRewards.forEach(reward => {
+        selectedRewards.forEach((reward, index) => {
             const button = document.createElement('button');
             button.className = 'ability-button tier-SSS';
             button.style.borderColor = '#FF0066';
+            button.style.opacity = '1'; // Force opacity to prevent transparency
+            button.style.animation = `slideInFromBottom 0.5s ease-out ${index * 0.1}s forwards`;
             button.innerHTML = `
                 <div class="ability-tier" style="color: #FF0066">[BOSS REWARD]</div>
                 <div class="ability-name">${reward.name}</div>
@@ -609,7 +611,9 @@ export class Game {
                     
                     // Start next wave after reward selection
                     setTimeout(() => {
-                        this.startWave(this.level + 1);
+                        if (this.state === 'playing') {
+                            this.startWave(this.level + 1);
+                        }
                     }, 2000);
                 } catch (error) {
                     console.error('Boss reward error:', error);
@@ -619,7 +623,9 @@ export class Game {
                     
                     // Start wave even if error
                     setTimeout(() => {
-                        this.startWave(this.level + 1);
+                        if (this.state === 'playing') {
+                            this.startWave(this.level + 1);
+                        }
                     }, 2000);
                 }
             });
