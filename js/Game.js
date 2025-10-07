@@ -211,6 +211,55 @@ export class Game {
         this.touchControls.touchId = null;
     }
 
+    applyBulletEnhancements(bullet) {
+        // Apply ALL player bullet enhancements to any bullet
+        if (!this.player) return;
+        
+        // Homing
+        if (this.player.powerUps.homingMissile) {
+            bullet.isHoming = true;
+            bullet.homingStrength = 0.15;
+        }
+        
+        // Spiral
+        if (this.player.powerUps.spiralShot) {
+            bullet.isSpiral = true;
+            bullet.spiralRadius = 30;
+            bullet.spiralSpeed = 5;
+            bullet.spiralCenterVx = 0;
+            bullet.spiralCenterVy = -CONFIG.BULLET.SPEED;
+            bullet.spiralTime = this.player.spiralAngle;
+        }
+        
+        // Piercing
+        if (this.player.powerUps.piercing) {
+            bullet.isPiercing = true;
+            bullet.piercingCount = 3;
+        }
+        
+        // Explosive
+        if (this.player.powerUps.explosive) {
+            bullet.isExplosive = true;
+        }
+        
+        // Critical
+        if (this.player.powerUps.criticalHit) {
+            bullet.isCritical = true;
+        }
+        
+        // Freezing
+        if (this.player.powerUps.freezing) {
+            bullet.isFreezing = true;
+        }
+        
+        // Boomerang
+        if (this.player.powerUps.boomerang) {
+            bullet.isBoomerang = true;
+            bullet.boomerangDistance = 450;
+            bullet.boomerangTime = 0;
+        }
+    }
+
     shoot() {
         if (!this.player || !this.player.canShoot()) return;
 
@@ -444,10 +493,11 @@ export class Game {
         const abilityOverlay = document.getElementById('ability-overlay');
         const abilityChoices = document.getElementById('ability-choices');
         
-        // Boss rewards - powerful unique abilities
+        // Boss rewards - ALL enhance bullets!
         const bossRewards = [
             {
                 name: '👑 Royal Power',
+                description: '공격력 +30, 체력 +50',
                 effect: () => {
                     this.player.maxHealth += 50;
                     this.player.health = this.player.maxHealth;
@@ -455,66 +505,67 @@ export class Game {
                 }
             },
             {
-                name: '⚡ Lightning Storm',
+                name: '⚡ Ultra Fire Rate',
+                description: '연사력 50% 증가',
                 effect: () => {
-                    this.player.powerUps.lightningStorm = true;
                     this.player.shootCooldown = Math.max(50, this.player.shootCooldown * 0.5);
                 }
             },
             {
-                name: '🌪️ Tornado',
+                name: '🌀 Multi-Spiral',
+                description: '나선탄 강화 (반경 +50%)',
                 effect: () => {
-                    this.player.powerUps.tornado = true;
+                    this.player.powerUps.spiralShot = true;
+                    // Will apply in applyBulletEnhancements
                 }
             },
             {
-                name: '🔱 Trident',
+                name: '💥 Mega Piercing',
+                description: '관통 +3 (총 6회)',
                 effect: () => {
-                    this.player.powerUps.trident = true;
+                    this.player.powerUps.piercing = true;
+                    this.player.piercingCount = 6;
                 }
             },
             {
-                name: '💫 Star Guardian',
+                name: '🔥 Inferno Blast',
+                description: '폭발 범위 +100%',
                 effect: () => {
-                    this.player.powerUps.starGuardian = true;
-                    this.player.starCount = 3;
+                    this.player.powerUps.explosive = true;
+                    this.player.powerUps.megaExplosion = true;
                 }
             },
             {
-                name: '🎆 Fireworks',
-                description: '연속 폭발 탄환 발사',
+                name: '🎯 Perfect Aim',
+                description: '모든 탄환 유도 + 치명타',
                 effect: () => {
-                    this.player.powerUps.fireworks = true;
+                    this.player.powerUps.homingMissile = true;
+                    this.player.powerUps.criticalHit = true;
                 }
             },
             {
-                name: '🌌 Galaxy Blast',
-                description: '화면 전체 적 소멸 + 공격력 증가',
+                name: '⚡ Chain Master',
+                description: '연쇄 번개 점프 +2',
                 effect: () => {
-                    // Clear all enemies
-                    for (const enemy of this.enemies) {
-                        enemy.destroy();
-                    }
-                    this.enemies = [];
-                    CONFIG.BULLET.DAMAGE += 50;
+                    this.player.powerUps.chainLightning = true;
                 }
             },
             {
-                name: '⭐ Supernova',
-                description: '초대형 노바 + 공격력 대폭 증가',
+                name: '🌌 Galaxy Shot',
+                description: '트리플+퀴드 동시 획득',
                 effect: () => {
-                    this.player.powerUps.nova = true;
-                    CONFIG.BULLET.DAMAGE += 40;
-                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown * 0.7);
+                    this.player.powerUps.tripleShot = true;
+                    this.player.powerUps.quadShot = true;
                 }
             },
             {
-                name: '🔮 Mystic Shield',
-                description: '5초 무적 + 체력 완전 회복',
+                name: '💫 Ultimate Power',
+                description: '모든 스탯 +20%',
                 effect: () => {
-                    this.player.health = this.player.maxHealth;
-                    this.player.powerUps.godMode = true;
-                    this.player.godModeEndTime = Date.now() + 5000;
+                    CONFIG.BULLET.DAMAGE += 20;
+                    this.player.maxHealth += 30;
+                    this.player.health = Math.min(this.player.health + 30, this.player.maxHealth);
+                    this.player.shootCooldown = Math.max(100, this.player.shootCooldown * 0.8);
                 }
             }
         ];
@@ -738,6 +789,42 @@ export class Game {
         ));
     }
 
+    createBlackHole(x, y) {
+        const duration = 3000;
+        const radius = 150;
+        const startTime = Date.now();
+        
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                this.effects.push(new ExplosionEffect(x, y, '#9400D3'));
+            }, i * 100);
+        }
+        
+        this.effects.push(new TextEffect(x, y - 30, '🌀 BLACK HOLE 🌀', '#9400D3'));
+        
+        const blackHoleInterval = setInterval(() => {
+            if (Date.now() - startTime > duration) {
+                clearInterval(blackHoleInterval);
+                return;
+            }
+            
+            for (const enemy of this.enemies) {
+                if (!enemy.active) continue;
+                const dx = x - (enemy.x + enemy.width / 2);
+                const dy = y - (enemy.y + enemy.height / 2);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < radius) {
+                    enemy.x += (dx / dist) * 2;
+                    enemy.y += (dy / dist) * 2;
+                    if (dist < 30) {
+                        enemy.takeDamage(5);
+                    }
+                }
+            }
+        }, 50);
+    }
+
     createExplosion(x, y) {
         // Damage nearby enemies
         const explosionRadius = this.player && this.player.powerUps.megaExplosion ? 200 : 80;
@@ -789,12 +876,27 @@ export class Game {
             
             const now = Date.now();
             
-            // Drone shooting
+            // Drone shooting - uses enhanced bullets
             if (this.player.drones.length > 0) {
                 for (const drone of this.player.drones) {
                     if (now - drone.lastShot > 800) {
-                        this.bullets.push(new Bullet(drone.x - 3, drone.y - 10, true));
+                        const bullet = new Bullet(drone.x - 3, drone.y - 10, true);
+                        this.applyBulletEnhancements(bullet);
+                        this.bullets.push(bullet);
                         drone.lastShot = now;
+                    }
+                }
+            }
+            
+            // Orbital shooting - uses enhanced bullets
+            if (this.player.orbitals.length > 0) {
+                for (const orbital of this.player.orbitals) {
+                    if (!orbital.lastShot) orbital.lastShot = 0;
+                    if (now - orbital.lastShot > 1000) {
+                        const bullet = new Bullet(orbital.x - 3, orbital.y - 10, true);
+                        this.applyBulletEnhancements(bullet);
+                        this.bullets.push(bullet);
+                        orbital.lastShot = now;
                     }
                 }
             }
@@ -1128,6 +1230,14 @@ export class Game {
                     // Chain Lightning - jumps to nearby enemies
                     if (this.player && this.player.powerUps.chainLightning) {
                         this.triggerChainLightning(enemy, 3, 200); // Jump up to 3 times, 200px range
+                    }
+                    
+                    // Black Hole activation
+                    if (bullet.isBlackHole && !bullet.blackHoleActivated) {
+                        bullet.blackHoleActivated = true;
+                        this.createBlackHole(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                        bullet.destroy();
+                        continue;
                     }
                     
                     // Piercing bullets don't get destroyed
@@ -1549,9 +1659,37 @@ export class Game {
                 id: 'doubleShot',
                 tier: 'B',
                 name: '🎯 더블샷',
-                description: '2발 동시 발사',
+                description: '탄환 +1',
                 effect: () => {
                     this.player.powerUps.doubleShot = true;
+                }
+            },
+            // Special enhancements - only appear if base ability active
+            {
+                id: 'explosiveUpgrade',
+                tier: 'A',
+                name: '💣 폭발 강화',
+                description: '폭발 범위 +50%',
+                effect: () => {
+                    // Handled in createExplosion
+                }
+            },
+            {
+                id: 'chainUpgrade',
+                tier: 'A',
+                name: '⚡ 연쇄 강화',
+                description: '번개 점프 +2',
+                effect: () => {
+                    // Handled in triggerChainLightning
+                }
+            },
+            {
+                id: 'piercingUpgrade',
+                tier: 'A',
+                name: '🔥 관통 강화',
+                description: '관통 횟수 +2',
+                effect: () => {
+                    this.player.piercingCount += 2;
                 }
             },
             // C Tier (30% chance)
@@ -1650,8 +1788,11 @@ export class Game {
             const tierAbilities = abilities.filter(a => {
                 if (a.tier !== selectedTier || usedIds.has(a.id)) return false;
                 
-                // Mega Explosion only appears if explosive is active
+                // Conditional abilities
                 if (a.id === 'megaExplosion' && !this.player.powerUps.explosive) return false;
+                if (a.id === 'explosiveUpgrade' && !this.player.powerUps.explosive) return false;
+                if (a.id === 'chainUpgrade' && !this.player.powerUps.chainLightning) return false;
+                if (a.id === 'piercingUpgrade' && !this.player.powerUps.piercing) return false;
                 
                 return true;
             });
