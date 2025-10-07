@@ -71,8 +71,8 @@ export const CONFIG = {
     // Level progression
     LEVELS: {
         SCORE_MULTIPLIER: 1.2,
-        ENEMY_SPEED_INCREASE: 0.03, // Reduced from 0.15 to 0.03 for much slower speed increase
-        SPAWN_RATE_DECREASE: 150, // Reduced from 200 for more gradual spawn rate increase
+        ENEMY_SPEED_INCREASE: 0.02, // Further reduced from 0.03 to 0.02
+        SPAWN_RATE_DECREASE: 100, // Reduced from 150 for even more gradual increase
     },
     
     // Particle effects

@@ -65,6 +65,10 @@ export class Player extends GameObject {
         this.lastGodModeUse = 0;
         this.spiralAngle = 0;
         this.boomerangs = [];
+        this.multiShotCount = 1;
+        this.lastBlackHoleShot = 0;
+        this.canShootBlackHole = true;
+        this.phoenixBuff = false;
         
         // Shield effect
         this.shieldAlpha = 0;
@@ -291,9 +295,12 @@ export class Player extends GameObject {
             const currentTime = Date.now();
             if (this.powerUps.phoenixReborn && !this.phoenixUsed && 
                 currentTime - this.lastPhoenixTime > 90000) {
-                this.health = this.maxHealth;
+                this.health = this.maxHealth + 50;
+                this.maxHealth += 50;
                 this.phoenixUsed = true;
                 this.lastPhoenixTime = currentTime;
+                this.phoenixBuff = true;
+                CONFIG.BULLET.DAMAGE += 20; // Permanent damage boost
                 // Visual effect will be added in Game.js
                 return false;
             }

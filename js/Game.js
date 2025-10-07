@@ -228,73 +228,95 @@ export class Game {
             });
         }
 
-        // Determine number of bullets based on multi-shot abilities
+        // Calculate total bullets (1 base + additions from powerups)
         let bulletCount = 1;
-        let bulletPositions = [bulletX];
+        if (this.player.powerUps.pentaShot) bulletCount += 5;
+        if (this.player.powerUps.quadShot) bulletCount += 4;
+        if (this.player.powerUps.tripleShot) bulletCount += 3;
+        if (this.player.powerUps.doubleShot) bulletCount += 1;
         
-        if (this.player.powerUps.pentaShot) {
-            bulletCount = 5;
-            bulletPositions = [bulletX - 30, bulletX - 15, bulletX, bulletX + 15, bulletX + 30];
-        } else if (this.player.powerUps.quadShot) {
-            bulletCount = 4;
-            bulletPositions = [bulletX - 22, bulletX - 7, bulletX + 7, bulletX + 22];
-        } else if (this.player.powerUps.tripleShot) {
-            bulletCount = 3;
-            bulletPositions = [bulletX - 15, bulletX, bulletX + 15];
-        } else if (this.player.powerUps.doubleShot) {
-            bulletCount = 2;
-            bulletPositions = [bulletX - 10, bulletX + 10];
+        // Generate positions based on total bullet count
+        const bulletPositions = [];
+        const spacing = 15;
+        const startOffset = -(bulletCount - 1) * spacing / 2;
+        for (let i = 0; i < bulletCount; i++) {
+            bulletPositions.push(bulletX + startOffset + i * spacing);
         }
         
-        // Fire bullets with combined abilities
+        // Fire bullets with ALL abilities combined
         for (let i = 0; i < bulletCount; i++) {
             const bx = bulletPositions[i];
+            const bullet = new Bullet(bx, bulletY, true);
             
-            // Laser Beam (can combine with multi-shot)
+            // Apply ALL special bullet types (they all stack now!)
+            
+            // Laser Beam - follows player
             if (this.player.powerUps.laserBeam) {
-                const laser = new Bullet(bx, bulletY, true);
-                laser.isLaser = true;
-                laser.width = 8;
-                laser.height = CONFIG.CANVAS_HEIGHT;
-                laser.vy = 0;
-                laser.lifespan = 100;
-                this.bullets.push(laser);
+                bullet.isLaser = true;
+                bullet.width = 8;
+                bullet.laserDuration = 500; // 0.5 seconds
+                bullet.laserDamage = 2; // Lower damage for multi-hit
+                bullet.lastLaserHit = 0;
+                bullet.laserHitInterval = 100; // Hit every 0.1s
+                bullet.followsPlayer = true;
+                bullet.offsetX = bx - bulletX; // Store offset from player
             }
             
-            // Homing Missile (can combine with multi-shot)
+            // Homing - ALL bullets can home
             if (this.player.powerUps.homingMissile) {
-                const missile = new Bullet(bx, bulletY, true);
-                missile.isHoming = true;
-                missile.homingStrength = 0.15;
-                this.bullets.push(missile);
+                bullet.isHoming = true;
+                bullet.homingStrength = 0.15;
             }
             
-            // Spiral Shot (can combine with multi-shot) - TRUE SPIRAL
+            // Spiral - ALL bullets can spiral
             if (this.player.powerUps.spiralShot) {
-                const bullet = new Bullet(bx, bulletY, true);
                 bullet.isSpiral = true;
-                bullet.spiralRadius = 30; // Spiral radius
-                bullet.spiralSpeed = 5; // Rotation speed
-                bullet.spiralCenterVx = 0; // Move straight up
+                bullet.spiralRadius = 30;
+                bullet.spiralSpeed = 5;
+                bullet.spiralCenterVx = 0;
                 bullet.spiralCenterVy = -CONFIG.BULLET.SPEED;
-                bullet.spiralTime = this.player.spiralAngle; // Use player's spiral angle for variety
-                this.bullets.push(bullet);
+                bullet.spiralTime = this.player.spiralAngle + i * 0.5;
             }
             
-            // Normal shot (if no special shot type)
-            if (!this.player.powerUps.laserBeam && 
-                !this.player.powerUps.homingMissile && 
-                !this.player.powerUps.spiralShot) {
-                const bullet = new Bullet(bx, bulletY, true);
-                
-                // Apply visual effects based on player abilities
-                if (this.player.powerUps.piercing) bullet.isPiercing = true;
-                if (this.player.powerUps.explosive) bullet.isExplosive = true;
-                if (this.player.powerUps.criticalHit) bullet.isCritical = true;
-                if (this.player.powerUps.freezing) bullet.isFreezing = true;
-                
-                this.bullets.push(bullet);
+            // Piercing - ALL bullets can pierce
+            if (this.player.powerUps.piercing) {
+                bullet.isPiercing = true;
+                bullet.piercingCount = 3;
             }
+            
+            // Explosive - ALL bullets explode
+            if (this.player.powerUps.explosive) {
+                bullet.isExplosive = true;
+            }
+            
+            // Critical - ALL bullets can crit
+            if (this.player.powerUps.criticalHit) {
+                bullet.isCritical = true;
+            }
+            
+            // Freezing - ALL bullets freeze
+            if (this.player.powerUps.freezing) {
+                bullet.isFreezing = true;
+            }
+            
+            // Boomerang - ALL bullets boomerang
+            if (this.player.powerUps.boomerang) {
+                bullet.isBoomerang = true;
+                bullet.boomerangDistance = 450; // 50% increase from 300
+                bullet.boomerangTime = 0;
+            }
+            
+            // Black Hole bullet
+            if (this.player.powerUps.blackHole && this.player.canShootBlackHole &&
+                Date.now() - this.player.lastBlackHoleShot > 8000) {
+                bullet.isBlackHole = true;
+                bullet.color = '#9400D3'; // Purple color
+                this.player.lastBlackHoleShot = Date.now();
+                this.player.canShootBlackHole = false;
+                setTimeout(() => { this.player.canShootBlackHole = true; }, 8000);
+            }
+            
+            this.bullets.push(bullet);
         }
         
         // Multi-shot: fire additional volleys
@@ -587,7 +609,7 @@ export class Game {
         
         const centerX = this.player.x + this.player.width / 2;
         const centerY = this.player.y + this.player.height / 2;
-        const shockwaveRadius = 250; // Increased from 150 to 250
+        const shockwaveRadius = 450; // Extended to map center (900/2 = 450)
         
         // Push back and damage enemies
         for (const enemy of this.enemies) {
@@ -952,7 +974,7 @@ export class Game {
         // Update and draw bullets
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
-            bullet.update(deltaTime, this.enemies);
+            bullet.update(deltaTime, this.enemies, this.player);
             bullet.draw(this.ctx);
 
             if (!bullet.active) {
@@ -1228,7 +1250,7 @@ export class Game {
     levelUp() {
         this.playerLevel++;
         this.experience -= this.experienceToNextLevel;
-        this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.2); // Changed from 1.5 to 1.2
+        this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.15); // Further reduced from 1.2 to 1.15
         
         // Pause game and show ability selection
         this.isPaused = true;
@@ -1474,18 +1496,6 @@ export class Game {
                     }
                 }
             },
-            {
-                id: 'toxicCloud',
-                tier: 'A',
-                name: '☠️ 독구름',
-                description: '지속 데미지를 주는 독구름',
-                effect: () => {
-                    this.player.powerUps.toxicCloud = true;
-                    if (!this.player.lastToxicCloudTime) {
-                        this.player.lastToxicCloudTime = 0;
-                    }
-                }
-            },
             // B Tier (20% chance)
             { 
                 id: 'damageUp2', 
@@ -1602,15 +1612,15 @@ export class Game {
             },
         ];
         
-        // Tier weights for rarity - balanced for excitement
+        // Tier weights for rarity - favor lower tiers
         const tierWeights = {
-            'SSS': 8,    // Increased from 0.5% to 8%
-            'SS': 12,    // Increased from 2% to 12%
-            'S': 18,     // Increased from 5% to 18%
-            'A': 22,     // Increased from 10% to 22%
-            'B': 20,     // Same 20%
-            'C': 15,     // Decreased from 30% to 15%
-            'D': 5       // Decreased from 32.5% to 5%
+            'SSS': 2,    // Very rare
+            'SS': 5,     // Rare
+            'S': 10,     // Uncommon
+            'A': 18,     // Common
+            'B': 25,     // Very common
+            'C': 25,     // Very common
+            'D': 15      // Common
         };
         
         // Select 3 unique abilities based on weighted random
@@ -1636,9 +1646,15 @@ export class Game {
             }
             
             // Filter abilities by selected tier and exclude already selected
-            const tierAbilities = abilities.filter(a => 
-                a.tier === selectedTier && !usedIds.has(a.id)
-            );
+            // Also check special requirements
+            const tierAbilities = abilities.filter(a => {
+                if (a.tier !== selectedTier || usedIds.has(a.id)) return false;
+                
+                // Mega Explosion only appears if explosive is active
+                if (a.id === 'megaExplosion' && !this.player.powerUps.explosive) return false;
+                
+                return true;
+            });
             
             if (tierAbilities.length > 0) {
                 const randomAbility = tierAbilities[Math.floor(Math.random() * tierAbilities.length)];

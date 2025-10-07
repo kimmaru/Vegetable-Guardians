@@ -37,15 +37,63 @@ export class Bullet extends GameObject {
         this.spiralSpeed = 0;
         this.spiralCenterVx = 0;
         this.spiralCenterVy = 0;
+        
+        // Laser properties
+        this.followsPlayer = false;
+        this.offsetX = 0;
+        this.laserDuration = 0;
+        this.laserDamage = 2;
+        this.lastLaserHit = 0;
+        this.laserHitInterval = 100;
+        
+        // Boomerang properties
+        this.isBoomerang = false;
+        this.boomerangDistance = 450;
+        this.boomerangTime = 0;
+        this.returning = false;
+        
+        // Black hole properties
+        this.isBlackHole = false;
+        this.blackHoleActivated = false;
+        
+        // Piercing count
+        this.piercingCount = 3;
     }
 
-    update(deltaTime, enemies = []) {
+    update(deltaTime, enemies = [], player = null) {
         this.age += deltaTime;
+        
+        // Laser duration check
+        if (this.isLaser && this.laserDuration && this.age > this.laserDuration) {
+            this.destroy();
+            return;
+        }
         
         // Lifespan check
         if (this.lifespan && this.age > this.lifespan) {
             this.destroy();
             return;
+        }
+        
+        // Laser follows player
+        if (this.isLaser && this.followsPlayer && player) {
+            this.x = player.x + player.width / 2 + this.offsetX - this.width / 2;
+            this.y = player.y;
+            this.height = CONFIG.CANVAS_HEIGHT - this.y;
+            return; // Laser doesn't move, just tracks player
+        }
+        
+        // Boomerang behavior
+        if (this.isBoomerang && !this.isLaser) {
+            this.boomerangTime += deltaTime;
+            if (this.boomerangTime > this.boomerangDistance && !this.returning) {
+                this.returning = true;
+                this.vy = -this.vy;
+            }
+            if (this.returning && this.y < -50) {
+                this.destroy();
+                return;
+            }
         }
         
         // Spiral behavior
