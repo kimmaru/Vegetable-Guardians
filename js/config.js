@@ -20,8 +20,8 @@ export const CONFIG = {
         HEIGHT: 90, // Increased by 50% from 60 (60 * 1.5)
         BASE_SPEED: 0.78, // Increased by 20% from 0.65 (0.65 * 1.2)
         BASE_HEALTH: 25, // Reduced from 50 to 25 (half)
-        SPAWN_INTERVAL: 2308, // Decreased by 30% (3000 / 1.3)
-        MIN_SPAWN_INTERVAL: 923, // Decreased by 30% (1200 / 1.3)
+        SPAWN_INTERVAL: 1500, // Faster spawn for more action
+        MIN_SPAWN_INTERVAL: 600, // Minimum spawn interval
         POINTS: 10,
     },
     
