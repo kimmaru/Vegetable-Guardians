@@ -567,10 +567,20 @@ export class Game {
             this.bullets.push(bullet);
         }
         
-        // Visual effect
-        for (let i = 0; i < 20; i++) {
-            this.particles.push(new Particle(centerX, centerY, randomChoice(['⭐', '✨', '💫'])));
-        }
+        // Visual effect - use ExplosionEffect instead of Particle
+        this.effects.push(new ExplosionEffect(
+            centerX,
+            centerY,
+            '#FFD700'
+        ));
+        
+        // Add nova text effect
+        this.effects.push(new TextEffect(
+            centerX,
+            centerY - 30,
+            '🌟 NOVA 🌟',
+            '#FFD700'
+        ));
     }
     
     triggerShockwave() {
@@ -594,10 +604,20 @@ export class Game {
             }
         }
         
-        // Visual effect
-        for (let i = 0; i < 30; i++) {
-            this.particles.push(new Particle(centerX, centerY, '💨'));
-        }
+        // Visual effect - use ExplosionEffect instead of Particle
+        this.effects.push(new ExplosionEffect(
+            centerX,
+            centerY,
+            '#88CCFF'
+        ));
+        
+        // Add shockwave text effect
+        this.effects.push(new TextEffect(
+            centerX,
+            centerY - 30,
+            '💨 SHOCKWAVE 💨',
+            '#88CCFF'
+        ));
     }
     
     triggerToxicCloud() {
@@ -617,10 +637,20 @@ export class Game {
             }
         }
         
-        // Visual effect
-        for (let i = 0; i < 15; i++) {
-            this.particles.push(new Particle(centerX + Math.random() * 100 - 50, centerY + Math.random() * 100 - 50, '☠️'));
-        }
+        // Visual effect - use ExplosionEffect instead of Particle
+        this.effects.push(new ExplosionEffect(
+            centerX,
+            centerY,
+            '#66FF66'
+        ));
+        
+        // Add toxic text effect
+        this.effects.push(new TextEffect(
+            centerX,
+            centerY - 30,
+            '☠️ TOXIC ☠️',
+            '#66FF66'
+        ));
     }
 
     createExplosion(x, y) {
