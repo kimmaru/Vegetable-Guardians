@@ -29,6 +29,14 @@ export class Bullet extends GameObject {
         this.isExplosive = false;
         this.isCritical = false;
         this.isFreezing = false;
+        
+        // Spiral bullet properties
+        this.isSpiral = false;
+        this.spiralTime = 0;
+        this.spiralRadius = 0;
+        this.spiralSpeed = 0;
+        this.spiralCenterVx = 0;
+        this.spiralCenterVy = 0;
     }
 
     update(deltaTime, enemies = []) {
@@ -40,8 +48,21 @@ export class Bullet extends GameObject {
             return;
         }
         
+        // Spiral behavior
+        if (this.isSpiral) {
+            this.spiralTime += deltaTime * 0.005;
+            
+            // Calculate spiral offset
+            const angle = this.spiralTime * this.spiralSpeed;
+            const offsetX = Math.cos(angle) * this.spiralRadius * (this.spiralTime / 100);
+            const offsetY = Math.sin(angle) * this.spiralRadius * (this.spiralTime / 100);
+            
+            // Move forward while spiraling
+            this.x += this.spiralCenterVx + offsetX * 0.1;
+            this.y += this.spiralCenterVy + offsetY * 0.1;
+        }
         // Homing logic
-        if (this.isHoming && this.isPlayer && enemies.length > 0) {
+        else if (this.isHoming && this.isPlayer && enemies.length > 0) {
             // Find nearest enemy
             let nearestEnemy = null;
             let minDist = Infinity;
@@ -76,6 +97,13 @@ export class Bullet extends GameObject {
                     }
                 }
             }
+            
+            this.y += this.vy;
+            this.x += this.vx;
+        } else {
+            // Normal movement
+            this.y += this.vy;
+            this.x += this.vx;
         }
         
         // Store position for trail (not for lasers)
@@ -85,9 +113,6 @@ export class Bullet extends GameObject {
                 this.trail.shift();
             }
         }
-
-        this.y += this.vy;
-        this.x += this.vx;
 
         // Remove if off screen (with margin for angled bullets, except lasers)
         if (!this.isLaser && (this.y < -this.height - 50 || this.y > CONFIG.CANVAS_HEIGHT + 50 ||

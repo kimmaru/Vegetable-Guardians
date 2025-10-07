@@ -269,17 +269,16 @@ export class Game {
                 this.bullets.push(missile);
             }
             
-            // Spiral Shot (can combine with multi-shot)
+            // Spiral Shot (can combine with multi-shot) - TRUE SPIRAL
             if (this.player.powerUps.spiralShot) {
-                const numBullets = 3;
-                for (let j = 0; j < numBullets; j++) {
-                    const angle = this.player.spiralAngle + (j / numBullets) * Math.PI * 2;
-                    const bullet = new Bullet(bx, bulletY, true);
-                    const speed = CONFIG.BULLET.SPEED;
-                    bullet.vx = Math.cos(angle) * speed * 0.4;
-                    bullet.vy = -speed * 0.9 + Math.sin(angle) * speed * 0.4;
-                    this.bullets.push(bullet);
-                }
+                const bullet = new Bullet(bx, bulletY, true);
+                bullet.isSpiral = true;
+                bullet.spiralRadius = 30; // Spiral radius
+                bullet.spiralSpeed = 5; // Rotation speed
+                bullet.spiralCenterVx = 0; // Move straight up
+                bullet.spiralCenterVy = -CONFIG.BULLET.SPEED;
+                bullet.spiralTime = this.player.spiralAngle; // Use player's spiral angle for variety
+                this.bullets.push(bullet);
             }
             
             // Normal shot (if no special shot type)
@@ -588,7 +587,7 @@ export class Game {
         
         const centerX = this.player.x + this.player.width / 2;
         const centerY = this.player.y + this.player.height / 2;
-        const shockwaveRadius = 150;
+        const shockwaveRadius = 250; // Increased from 150 to 250
         
         // Push back and damage enemies
         for (const enemy of this.enemies) {
@@ -604,12 +603,16 @@ export class Game {
             }
         }
         
-        // Visual effect - use ExplosionEffect instead of Particle
-        this.effects.push(new ExplosionEffect(
-            centerX,
-            centerY,
-            '#88CCFF'
-        ));
+        // Enhanced visual effects - multiple expanding rings
+        for (let i = 0; i < 5; i++) {
+            setTimeout(() => {
+                this.effects.push(new ExplosionEffect(
+                    centerX,
+                    centerY,
+                    '#88CCFF'
+                ));
+            }, i * 50);
+        }
         
         // Add shockwave text effect
         this.effects.push(new TextEffect(
@@ -618,6 +621,66 @@ export class Game {
             '💨 SHOCKWAVE 💨',
             '#88CCFF'
         ));
+    }
+    
+    triggerChainLightning(sourceEnemy, jumpsRemaining, range) {
+        if (jumpsRemaining <= 0 || !sourceEnemy || !sourceEnemy.active) return;
+        
+        const sourceX = sourceEnemy.x + sourceEnemy.width / 2;
+        const sourceY = sourceEnemy.y + sourceEnemy.height / 2;
+        
+        // Find nearest enemy within range that hasn't been hit yet
+        let nearestEnemy = null;
+        let minDist = Infinity;
+        
+        // Track hit enemies to prevent re-hitting (using a simple approach)
+        if (!this.lightningHitEnemies) {
+            this.lightningHitEnemies = new Set();
+        }
+        
+        for (const enemy of this.enemies) {
+            if (!enemy.active || enemy === sourceEnemy || this.lightningHitEnemies.has(enemy)) continue;
+            
+            const dx = (enemy.x + enemy.width / 2) - sourceX;
+            const dy = (enemy.y + enemy.height / 2) - sourceY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < range && dist < minDist) {
+                minDist = dist;
+                nearestEnemy = enemy;
+            }
+        }
+        
+        if (nearestEnemy) {
+            // Mark as hit
+            this.lightningHitEnemies.add(nearestEnemy);
+            
+            // Deal damage
+            nearestEnemy.takeDamage(20);
+            
+            // Visual effect
+            this.effects.push(new TextEffect(
+                nearestEnemy.x + nearestEnemy.width / 2,
+                nearestEnemy.y - 10,
+                '⚡20',
+                '#FFFF00'
+            ));
+            
+            // Lightning visual effect
+            this.effects.push(new ExplosionEffect(
+                nearestEnemy.x + nearestEnemy.width / 2,
+                nearestEnemy.y + nearestEnemy.height / 2,
+                '#FFFF00'
+            ));
+            
+            // Continue chain
+            setTimeout(() => {
+                this.triggerChainLightning(nearestEnemy, jumpsRemaining - 1, range);
+            }, 100);
+        } else {
+            // Chain ended, clear tracking
+            this.lightningHitEnemies = new Set();
+        }
     }
     
     triggerToxicCloud() {
@@ -1038,6 +1101,11 @@ export class Game {
                     // Explosive effect on hit (not on destroy)
                     if (bullet.isExplosive || (this.player && this.player.powerUps.explosive)) {
                         this.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                    }
+                    
+                    // Chain Lightning - jumps to nearby enemies
+                    if (this.player && this.player.powerUps.chainLightning) {
+                        this.triggerChainLightning(enemy, 3, 200); // Jump up to 3 times, 200px range
                     }
                     
                     // Piercing bullets don't get destroyed
